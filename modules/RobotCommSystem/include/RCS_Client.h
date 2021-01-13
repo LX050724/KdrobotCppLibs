@@ -1,3 +1,9 @@
+/**
+ * @file RCS_Client.h
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #ifndef KDROBOTCPPLIBS_RCS_CLIENT_H
 #define KDROBOTCPPLIBS_RCS_CLIENT_H
 

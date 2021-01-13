@@ -1,4 +1,10 @@
-#include "../include/OpenCV_Util.h"
+/**
+ * @file OpenCV_Util.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
+#include "OpenCV_Util.h"
 #include "omp.h"
 
 void drawRotatedRect(cv::InputOutputArray Img, cv::RotatedRect rect,
@@ -17,9 +23,9 @@ void HChannleOffsetInRange(const cv::Mat &Input, int offset, const cv::Scalar &l
     int nl = Input.cols * chs;
     dst.create(Input.rows, Input.cols, CV_8U);
 
-    int16_t H_Upper = upperb[0] + offset, H_Lower = lowerb[0] + offset;
-    int16_t S_Upper = upperb[1], S_Lower = lowerb[1];
-    int16_t V_Upper = upperb[2], V_Lower = lowerb[2];
+    int16_t H_Upper = (int16_t) upperb[0] + offset, H_Lower = (int16_t) lowerb[0] + offset;
+    int16_t S_Upper = (int16_t) upperb[1], S_Lower = (int16_t) lowerb[1];
+    int16_t V_Upper = (int16_t) upperb[2], V_Lower = (int16_t) lowerb[2];
 #pragma omp parallel for
     for (int k = 0; k < nr; k++) {
         // 每一行图像的指针

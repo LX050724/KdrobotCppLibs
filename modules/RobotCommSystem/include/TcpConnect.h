@@ -1,6 +1,11 @@
+/**
+ * @file TcpConnect.h
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #ifndef KDROBOTCPPLIBS_TCPCONNECT_H
 #define KDROBOTCPPLIBS_TCPCONNECT_H
-
 
 #include <QObject>
 #include <QTcpSocket>

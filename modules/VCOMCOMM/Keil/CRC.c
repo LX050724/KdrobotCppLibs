@@ -1,3 +1,9 @@
+/**
+ * @file CRC.c
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "CRC.h"
 #include "stddef.h"
 

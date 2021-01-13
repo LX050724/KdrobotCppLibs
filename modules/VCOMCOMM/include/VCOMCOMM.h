@@ -1,3 +1,9 @@
+/**
+ * @file VCOMCOMM.h
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #ifndef KDROBOTCPPLIBS_VCOMCOMM_PC_H
 #define KDROBOTCPPLIBS_VCOMCOMM_PC_H
 

@@ -1,3 +1,9 @@
+/**
+ * @file RCS_Server.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "RCS_Server.h"
 #include <QTcpSocket>
 #include <QJsonObject>

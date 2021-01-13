@@ -1,3 +1,10 @@
+/**
+ * @file CRC.h
+ * @author yao
+ * @date 2021年1月13日
+ * @brief C++实现的CRC
+ */
+
 #ifndef KDROBOTCPPLIBS_CRC_H
 #define KDROBOTCPPLIBS_CRC_H
 

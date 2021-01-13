@@ -1,3 +1,9 @@
+/**
+ * @file HostAddressRadio.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "HostAddressRadio.h"
 #include <QNetworkInterface>
 #include <QJsonDocument>

@@ -1,3 +1,11 @@
+/**
+ * @file VCOMCOMM.h
+ * @author yao
+ * @date 2021年1月13日
+ * @brief Keil使用的虚拟串口通信的下位机端
+ */
+
+
 #ifndef _VCOMCOMM_H_
 #define _VCOMCOMM_H_
 

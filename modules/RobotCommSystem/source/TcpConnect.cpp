@@ -1,3 +1,9 @@
+/**
+ * @file TcpConnect.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include <QJsonObject>
 #include "TcpConnect.h"
 

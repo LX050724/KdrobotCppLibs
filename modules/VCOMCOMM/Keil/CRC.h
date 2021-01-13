@@ -1,3 +1,10 @@
+/**
+ * @file CRC.h
+ * @author yao
+ * @date 2021年1月13日
+ * @brief Keil使用的纯C语言实现的CRC
+ */
+
 #ifndef _CRC_H_
 #define _CRC_H_
 

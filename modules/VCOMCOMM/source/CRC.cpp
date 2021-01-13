@@ -1,3 +1,9 @@
+/**
+ * @file CRC.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "CRC.h"
 
 static const uint8_t CRC8_INIT = 0xff;

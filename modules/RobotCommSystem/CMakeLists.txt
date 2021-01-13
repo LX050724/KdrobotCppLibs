@@ -31,6 +31,8 @@ if (Qt${QT_VERSION}Core_FOUND AND Qt${QT_VERSION}Network_FOUND)
 
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 
+    add_subdirectory(RobotCommSystemServer)
+
     install(TARGETS ${PROJECT_NAME}
             CONFIGURATIONS ${CMAKE_BUILD_TYPE}
             EXPORT ${PROJECT_NAME}-targets
