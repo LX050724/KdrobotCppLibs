@@ -12,38 +12,40 @@
 void RCS_Server::tcpServer_newConnection() {
     while (pTcpServer->hasPendingConnections()) {
         QTcpSocket *socket = pTcpServer->nextPendingConnection();
-        connect(new TcpConnect(socket), SIGNAL(ServerReceive_HEAD(TcpConnect * , QString)),
-                this, SLOT(TcpConnect_receive_HEAD(TcpConnect * , QString)));
+        connect(new TcpConnect(socket), SIGNAL(ServerReceive_HEAD(TcpConnect *, const QString &)),
+                this, SLOT(TcpConnect_receive_HEAD(TcpConnect *, const QString &)));
     }
 }
 
-void RCS_Server::TcpConnect_disconnected(QString name) {
+void RCS_Server::TcpConnect_disconnected(const QString &name) {
     logger.warn("client '{}' disconnected", name.toStdString());
     QMutexLocker lk(&mutex);
     clientList.remove(name);
 }
 
-void RCS_Server::TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, QString name) {
+void RCS_Server::TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, const QString &name) {
     QMutexLocker lk(&mutex);
     clientList.insert(name, pTcpConnect);
     logger.info("client '{}' Connected", name.toStdString());
-    connect(pTcpConnect, SIGNAL(Receive_BROADCAST(QString, QString, QJsonObject)),
-            this, SLOT(TcpConnect_receive_BROADCAST(QString, QString, QJsonObject)));
+    connect(pTcpConnect, SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
+            this, SLOT(TcpConnect_receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(ServerReceive_GET(QString, QString, QString)),
-            this, SLOT(TcpConnect_receive_GET(QString, QString, QString)));
+    connect(pTcpConnect, SIGNAL(ServerReceive_GET(const QString &, const QString &, const QString &, const QJsonObject &)),
+            this, SLOT(TcpConnect_receive_GET(const QString &, const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(ServerReceive_PUSH(QString, QString, QString, QJsonObject)),
-            this, SLOT(TcpConnect_receive_PUSH(QString, QString, QString, QJsonObject)));
+    connect(pTcpConnect, SIGNAL(ServerReceive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)),
+            this, SLOT(TcpConnect_receive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(ServerReceive_CLIENT_RET(QString, QString, QJsonObject)),
-            this, SLOT(TcpConnect_receive_CLIENT_RET(QString, QString, QJsonObject)));
+    connect(pTcpConnect, SIGNAL(ServerReceive_CLIENT_RET(const QString &, const QString &, const QJsonObject &)),
+            this, SLOT(TcpConnect_receive_CLIENT_RET(const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(disconnected(QString)),
-            this, SLOT(TcpConnect_disconnected(QString)));
+    connect(pTcpConnect, SIGNAL(disconnected(const QString &)),
+            this, SLOT(TcpConnect_disconnected(const QString &)));
+    emit NewClient(pTcpConnect->socket->peerAddress(), name);
 }
 
-void RCS_Server::TcpConnect_receive_BROADCAST(QString from, QString broadcastName, QJsonObject message) {
+void RCS_Server::TcpConnect_receive_BROADCAST(const QString &from, const QString &broadcastName,
+                                              const QJsonObject &message) {
     for (const auto &client : clientList) {
         if (client->name != from)
             client->send_BROADCAST(from, broadcastName, message);
@@ -51,7 +53,8 @@ void RCS_Server::TcpConnect_receive_BROADCAST(QString from, QString broadcastNam
     logger.info("broadcast '{}' from '{}'", broadcastName.toStdString(), from.toStdString());
 }
 
-void RCS_Server::TcpConnect_receive_PUSH(QString from, QString sendTo, QString var, QJsonObject obj) {
+void RCS_Server::TcpConnect_receive_PUSH(const QString &from, const QString &sendTo, const QString &var,
+                                         const QJsonObject &obj) {
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
         it.value()->send_PUSH(sendTo, var, obj);
@@ -62,10 +65,11 @@ void RCS_Server::TcpConnect_receive_PUSH(QString from, QString sendTo, QString v
     }
 }
 
-void RCS_Server::TcpConnect_receive_GET(QString from, QString sendTo, QString var) {
+void RCS_Server::TcpConnect_receive_GET(const QString &from, const QString &sendTo, const QString &var,
+                                        const QJsonObject &info) {
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
-        it.value()->send_GET(from, var);
+        it.value()->send_GET(from, var, info);
         logger.info("forwarding GET request from '{}' to '{}'", from.toStdString(), sendTo.toStdString());
     } else {
         logger.error("not find client '{}'", sendTo.toStdString());
@@ -73,7 +77,7 @@ void RCS_Server::TcpConnect_receive_GET(QString from, QString sendTo, QString va
     }
 }
 
-void RCS_Server::TcpConnect_receive_CLIENT_RET(QString from, QString sendTo, QJsonObject ret) {
+void RCS_Server::TcpConnect_receive_CLIENT_RET(const QString &from, const QString &sendTo, const QJsonObject &ret) {
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
         it.value()->send_CLIENT_RET(from, ret);
@@ -82,4 +86,22 @@ void RCS_Server::TcpConnect_receive_CLIENT_RET(QString from, QString sendTo, QJs
         logger.error("not find client '{}'", sendTo.toStdString());
         clientList.find(sendTo).value()->send_SERVER_RET({{"error", "not find client '" + sendTo + '\''}});
     }
+}
+
+RCS_Server::RCS_Server(uint16_t TcpPort, bool udpRadio) : logger(__FUNCTION__) {
+    if (udpRadio) hostAddressRadio = new HostAddressRadio(this);
+    pTcpServer = new QTcpServer(this);
+    if (!pTcpServer->listen(QHostAddress::Any, TcpPort)) {
+        logger.error("TCP can't listing");
+        throw std::runtime_error("TCP can't listing");
+    }
+    connect(pTcpServer, SIGNAL(newConnection()), this, SLOT(tcpServer_newConnection()));
+}
+
+QList<QString> RCS_Server::getClientNameList() {
+    return clientList.keys();
+}
+
+size_t RCS_Server::getClientCount() {
+    return clientList.count();
 }

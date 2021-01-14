@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     QCommandLineParser parser;
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addOption({{"l", "log"}, "设置日志文件路径，默认不开启", "log"});
+    parser.addOption({{"l", "log"}, "Set the log file path. default disable", "log"});
     parser.process(a);
     QString logFile = parser.value("log");
     if (!logFile.isEmpty()) {
@@ -31,6 +31,12 @@ int main(int argc, char *argv[]) {
 #else
     logger.info("Build type: Release");
 #endif
-    RCS_Server server;
+    RCS_Server *server;
+    try {
+        server = new RCS_Server;
+    } catch (const std::runtime_error &e) {
+        logger.error(e.what());
+        return -1;
+    }
     return a.exec();
 }

@@ -116,12 +116,13 @@ void TcpConnect::DecodeJson(QByteArray &data) {
         case GET: {
             QString from_sendTo = jobj.find("from_sendTo")->toString();
             QString tar_var = jobj.find("var")->toString();
+            QJsonObject info = jobj.find("info")->toObject();
             switch (mode) {
                 case SERVER:
-                    emit ServerReceive_GET(name, from_sendTo, tar_var);
+                    emit ServerReceive_GET(name, from_sendTo, tar_var, info);
                     break;
                 case CLIENT:
-                    emit ClientReceive_GET(from_sendTo, tar_var);
+                    emit ClientReceive_GET(from_sendTo, tar_var, info);
                     break;
             }
             break;
@@ -182,59 +183,60 @@ TcpConnect::~TcpConnect() {
 }
 
 void TcpConnect::send_HEAD() {
-    QJsonObject jobj;
-    jobj.insert("type", HEAD);
-    jobj.insert("name", name);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", HEAD);
+    obj.insert("name", name);
+    write(obj);
 }
 
 void TcpConnect::send_BROADCAST(const QString &from, const QString &bordcastName, const QJsonObject &message) {
-    QJsonObject jobj;
-    jobj.insert("type", BROADCAST);
-    jobj.insert("from", from);
-    jobj.insert("bordcastName", bordcastName);
-    jobj.insert("bordcast", message);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", BROADCAST);
+    obj.insert("from", from);
+    obj.insert("bordcastName", bordcastName);
+    obj.insert("bordcast", message);
+    write(obj);
 }
 
 void TcpConnect::send_BROADCAST(const QString &bordcastName, const QJsonObject &message) {
-    QJsonObject jobj;
-    jobj.insert("type", BROADCAST);
-    jobj.insert("bordcastName", bordcastName);
-    jobj.insert("bordcast", message);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", BROADCAST);
+    obj.insert("bordcastName", bordcastName);
+    obj.insert("bordcast", message);
+    write(obj);
 }
 
 void TcpConnect::send_PUSH(const QString &from_sendTo, const QString &var, const QJsonObject &val) {
-    QJsonObject jobj;
-    jobj.insert("type", PUSH);
-    jobj.insert("from_sendTo", from_sendTo);
-    jobj.insert("var", var);
-    jobj.insert("val", val);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", PUSH);
+    obj.insert("from_sendTo", from_sendTo);
+    obj.insert("var", var);
+    obj.insert("val", val);
+    write(obj);
 }
 
-void TcpConnect::send_GET(const QString &from_sendTo, const QString &var) {
-    QJsonObject jobj;
-    jobj.insert("type", GET);
-    jobj.insert("from_sendTo", from_sendTo);
-    jobj.insert("var", var);
-    write(jobj);
+void TcpConnect::send_GET(const QString &from_sendTo, const QString &var, const QJsonObject &info) {
+    QJsonObject obj;
+    obj.insert("type", GET);
+    obj.insert("from_sendTo", from_sendTo);
+    obj.insert("var", var);
+    obj.insert("info", info);
+    write(obj);
 }
 
 void TcpConnect::send_SERVER_RET(const QJsonObject &ret) {
-    QJsonObject jobj;
-    jobj.insert("type", SERVER_RET);
-    jobj.insert("ret", ret);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", SERVER_RET);
+    obj.insert("ret", ret);
+    write(obj);
 }
 
 void TcpConnect::send_CLIENT_RET(const QString &from_sendTo, const QJsonObject &ret) {
-    QJsonObject jobj;
-    jobj.insert("type", CLIENT_RET);
-    jobj.insert("from_sendTo", from_sendTo);
-    jobj.insert("ret", ret);
-    write(jobj);
+    QJsonObject obj;
+    obj.insert("type", CLIENT_RET);
+    obj.insert("from_sendTo", from_sendTo);
+    obj.insert("ret", ret);
+    write(obj);
 }
 
 const char *TcpConnect::PACK_TYPE_ToString(TcpConnect::PACK_TYPE type) {

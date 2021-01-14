@@ -19,33 +19,37 @@ class RCS_Server : public QObject {
 Q_OBJECT
 
     spdlogger logger;
-    HostAddressRadio *hostAddressRadio;
+    HostAddressRadio *hostAddressRadio = nullptr;
     QTcpServer *pTcpServer;
     QMutex mutex;
     QMap<QString, TcpConnect *> clientList;
 public:
-    RCS_Server() : logger(__FUNCTION__) {
-        hostAddressRadio = new HostAddressRadio(this);
-        pTcpServer = new QTcpServer(this);
-        pTcpServer->listen(QHostAddress::Any, 8850);
-        connect(pTcpServer, SIGNAL(newConnection()), this, SLOT(tcpServer_newConnection()));
-    }
+    RCS_Server(uint16_t TcpPort = 8850, bool udpRadio = true);
+
+    QList<QString> getClientNameList();
+
+    size_t getClientCount();
+
+signals:
+    void NewClient(const QHostAddress &addr, const QString &name);
 
 protected slots:
 
     void tcpServer_newConnection();
 
-    void TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, QString name);
+    void TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, const QString &name);
 
-    void TcpConnect_receive_BROADCAST(QString from, QString broadcastName, QJsonObject message);
+    void TcpConnect_receive_BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &message);
 
-    void TcpConnect_receive_PUSH(QString from, QString sendTo, QString var, QJsonObject obj);
+    void TcpConnect_receive_PUSH(const QString &from, const QString &sendTo,
+                                 const QString &var, const QJsonObject &obj);
 
-    void TcpConnect_receive_GET(QString from, QString sendTo, QString var);
+    void TcpConnect_receive_GET(const QString &from, const QString &sendTo,
+                                const QString &var, const QJsonObject &info);
 
-    void TcpConnect_receive_CLIENT_RET(QString from, QString sendTo, QJsonObject ret);
+    void TcpConnect_receive_CLIENT_RET(const QString &from, const QString &sendTo, const QJsonObject &ret);
 
-    void TcpConnect_disconnected(QString name);
+    void TcpConnect_disconnected(const QString &name);
 };
 
 

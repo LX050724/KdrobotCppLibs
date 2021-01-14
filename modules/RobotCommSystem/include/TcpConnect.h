@@ -94,7 +94,7 @@ protected:
      * @param from_sendTo 客户端调用时表示sentTo目的客户端，服务端调用时表示from来源
      * @param var 变量名
      */
-    void send_GET(const QString &from_sendTo, const QString &var);
+    void send_GET(const QString &from_sendTo, const QString &var, const QJsonObject &info = QJsonObject());
 
     /**
      * 发送服务端返回值，仅由服务端调用
@@ -141,7 +141,7 @@ Q_SIGNALS:
      * 连接断开信号量
      * @param name 连接名（自己的名字）
      */
-    void disconnected(QString name);
+    void disconnected(const QString &name);
 
     /**
      * 接收到广播消息，服务端客户端相同
@@ -149,14 +149,14 @@ Q_SIGNALS:
      * @param var 消息名
      * @param val 消息值
      */
-    void Receive_BROADCAST(QString from, QString var, QJsonObject val);
+    void Receive_BROADCAST(const QString &from, const QString &var, const QJsonObject &val);
 
     /**
      * 服务端接收到连接头
      * @param connect 链接指针
      * @param name 客户端名
      */
-    void ServerReceive_HEAD(TcpConnect *connect, QString name);
+    void ServerReceive_HEAD(TcpConnect *connect, const QString &name);
 
     /**
      * 服务端收到PUSH请求
@@ -165,7 +165,7 @@ Q_SIGNALS:
      * @param var 要推送的消息名
      * @param val 要推送的消息值
      */
-    void ServerReceive_PUSH(QString from, QString target, QString var, QJsonObject val);
+    void ServerReceive_PUSH(const QString &from, const QString &target, const QString &var, const QJsonObject &val);
 
     /**
      * 服务端收到GET请求
@@ -173,7 +173,7 @@ Q_SIGNALS:
      * @param target 目标（目的客户端名）
      * @param var 要获取的消息名
      */
-    void ServerReceive_GET(QString from, QString target, QString var);
+    void ServerReceive_GET(const QString &from, const QString &target, const QString &var, const QJsonObject &info);
 
     /**
      * 服务器收到客户端返回值
@@ -181,7 +181,7 @@ Q_SIGNALS:
      * @param target 目标（目的客户端名）
      * @param val
      */
-    void ServerReceive_CLIENT_RET(QString from, QString sendTo, QJsonObject val);
+    void ServerReceive_CLIENT_RET(const QString &from, const QString &sendTo, const QJsonObject &val);
 
     /**
      * 客户端接收到PUSH
@@ -189,27 +189,27 @@ Q_SIGNALS:
      * @param var 推送的消息名
      * @param val 推送的消息值
      */
-    void ClientReceive_PUSH(QString from, QString var, QJsonObject val);
+    void ClientReceive_PUSH(const QString &from, const QString &var, const QJsonObject &val);
 
     /**
      * 客户端收到GET请求
      * @param from 来源（发送者名）
      * @param var 发送者要获取的消息名
      */
-    void ClientReceive_GET(QString from, QString var);
+    void ClientReceive_GET(const QString &from, const QString &var, const QJsonObject &info);
 
     /**
      * 客户端收到服务器返回值
      * @param val 返回值
      */
-    void ClientReceive_SERVER_RET(QJsonObject val);
+    void ClientReceive_SERVER_RET(const QJsonObject &val);
 
     /**
      * 客户端收到远端客户端返回值
      * @param from 来源（发送者名）
      * @param val 返回值
      */
-    void ClientReceive_CLIENT_RET(QString from, QJsonObject val);
+    void ClientReceive_CLIENT_RET(const QString &from, const QJsonObject &val);
 };
 
 #endif //RCS_SERVER_TCPCONNECT_H

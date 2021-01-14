@@ -8,8 +8,9 @@
 #include <QNetworkDatagram>
 #include "RCS_Client.h"
 
-RCS_Client::RCS_Client(const QString &_ClientName, QObject *parent) :
+RCS_Client::RCS_Client(const QString &_ClientName, uint16_t _TcpPort, uint16_t _UdpPort, QObject *parent) :
         QObject(parent), logger(__FUNCTION__), ClientName(_ClientName) {
+    TcpPort = _TcpPort;
     if (ClientName.isEmpty()) {
         logger.error("ClientName is empty");
         throw std::runtime_error("ClientName is empty");
@@ -26,9 +27,48 @@ RCS_Client::RCS_Client(const QString &_ClientName, QObject *parent) :
             }
         }
     }
-    udpSocket->bind(8849, QUdpSocket::ShareAddress);
+    udpSocket->bind(_UdpPort, QUdpSocket::ShareAddress);
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(UdpReadyRead()));
     waitMutex.lock();
+}
+
+RCS_Client::RCS_Client(const QString &_ClientName, const QHostAddress &addr, uint16_t _TcpPort, QObject *parent)
+        : logger(__FUNCTION__) {
+    logger.info("Custom IP:{} Port:{}", addr, _TcpPort);
+    TcpPort = _TcpPort;
+    ClientName = _ClientName;
+    QTcpSocket *tcpSocket = new QTcpSocket;
+    tcpSocket->connectToHost(addr, TcpPort);
+    waitMutex.lock();
+    if (tcpSocket->waitForConnected(5000)) {
+        pTcpConnect = new TcpConnect(tcpSocket, ClientName);
+
+        connect(pTcpConnect,
+                SIGNAL(ClientReceive_GET(const QString &, const QString &, const QJsonObject &)),
+                this, SLOT(receive_GET(const QString &, const QString &, const QJsonObject &)));
+
+        connect(pTcpConnect,
+                SIGNAL(ClientReceive_PUSH(const QString &, const QString &, const QJsonObject &)),
+                this, SLOT(receive_PUSH(const QString &, const QString &, const QJsonObject &)));
+
+        connect(pTcpConnect,
+                SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
+                this, SLOT(receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
+
+        connect(pTcpConnect,
+                SIGNAL(ClientReceive_CLIENT_RET(const QString &, const QJsonObject &)),
+                this, SLOT(receive_CLIENT_RET(const QString &, const QJsonObject &)));
+
+        connect(pTcpConnect,
+                SIGNAL(ClientReceive_SERVER_RET(const QJsonObject &)),
+                this, SLOT(receive_SERVER_RET(const QJsonObject &)));
+        Connected = true;
+        waitCondition.wakeAll();
+        waitMutex.unlock();
+    } else {
+        logger.error("Tcp Connect Time Out");
+        throw std::runtime_error("Tcp Connect Time Out");
+    }
 }
 
 void RCS_Client::UdpReadyRead() {
@@ -51,24 +91,29 @@ void RCS_Client::UdpReadyRead() {
                 if (remoteMASK.toIPv4Address() == mask && (remoteIP.toIPv4Address() & mask) == host) {
                     logger.info("ip {}", remoteIP.toString());
                     QTcpSocket *tcpSocket = new QTcpSocket;
-                    tcpSocket->connectToHost(remoteIP, 8850);
+                    tcpSocket->connectToHost(remoteIP, TcpPort);
                     if (tcpSocket->waitForConnected(5000)) {
                         pTcpConnect = new TcpConnect(tcpSocket, ClientName);
 
-                        connect(pTcpConnect, SIGNAL(ClientReceive_GET(QString, QString)),
-                                this, SLOT(receive_GET(QString, QString)));
+                        connect(pTcpConnect,
+                                SIGNAL(ClientReceive_GET(const QString &, const QString &, const QJsonObject &)),
+                                this, SLOT(receive_GET(const QString &, const QString &, const QJsonObject &)));
 
-                        connect(pTcpConnect, SIGNAL(ClientReceive_PUSH(QString, QString, QJsonObject)),
-                                this, SLOT(receive_PUSH(QString, QString, QJsonObject)));
+                        connect(pTcpConnect,
+                                SIGNAL(ClientReceive_PUSH(const QString &, const QString &, const QJsonObject &)),
+                                this, SLOT(receive_PUSH(const QString &, const QString &, const QJsonObject &)));
 
-                        connect(pTcpConnect, SIGNAL(Receive_BROADCAST(QString, QString, QJsonObject)),
-                                this, SLOT(receive_BROADCAST(QString, QString, QJsonObject)));
+                        connect(pTcpConnect,
+                                SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
+                                this, SLOT(receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
-                        connect(pTcpConnect, SIGNAL(ClientReceive_CLIENT_RET(QString, QJsonObject)),
-                                this, SLOT(receive_CLIENT_RET(QString, QJsonObject)));
+                        connect(pTcpConnect,
+                                SIGNAL(ClientReceive_CLIENT_RET(const QString &, const QJsonObject &)),
+                                this, SLOT(receive_CLIENT_RET(const QString &, const QJsonObject &)));
 
-                        connect(pTcpConnect, SIGNAL(ClientReceive_SERVER_RET(QJsonObject)),
-                                this, SLOT(receive_SERVER_RET(QJsonObject)));
+                        connect(pTcpConnect,
+                                SIGNAL(ClientReceive_SERVER_RET(const QJsonObject &)),
+                                this, SLOT(receive_SERVER_RET(const QJsonObject &)));
 
                         udpSocket->deleteLater();
                         udpSocket = nullptr;
@@ -88,10 +133,10 @@ void RCS_Client::UdpReadyRead() {
     }
 }
 
-void RCS_Client::receive_GET(QString from, QString var) {
-    auto it = GetCallBackMap.find(var);
-    if (it != GetCallBackMap.end() && (*it).first) {
-        pTcpConnect->send_PUSH(from, var, ((*it).first)(from));
+void RCS_Client::receive_GET(const QString &from, const QString &var, const QJsonObject &info) {
+    auto it = callBackMap.find(var);
+    if (it != callBackMap.end() && (*it).first) {
+        pTcpConnect->send_PUSH(from, var, ((*it).first)(from, info));
         logger.info("Receives a GET request from '{}', gets the '{}' variable", from, var);
     } else {
         pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is not registered"},
@@ -101,31 +146,45 @@ void RCS_Client::receive_GET(QString from, QString var) {
     }
 }
 
-void RCS_Client::receive_BROADCAST(QString from, QString broadcastName, QJsonObject val) {
+void RCS_Client::receive_BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &val) {
     logger.info("Receives a BROADCAST from '{}', broadcastName:'{}'", from, broadcastName);
     emit BROADCAST(from, broadcastName, val);
 }
 
-void RCS_Client::receive_PUSH(QString from, QString var, QJsonObject val) {
-    auto it = GetCallBackMap.find(var);
-    if (it != GetCallBackMap.end() && (*it).second) {
+void RCS_Client::receive_PUSH(const QString &from, const QString &var, const QJsonObject &val) {
+    auto it = callBackMap.find(var);
+    if (it != callBackMap.end()) {
+        pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is not registered"},
+                                            {"var",   var}});
+        logger.error("PUSH request from '{}', the requested '{}' variable is not registered", from, var);
+    } else if ((*it).second) {
         ((*it).second)(from, val);
         logger.info("Receives a PUSH request from '{}', push the '{}' variable", from, var);
     } else {
-        QJsonObject jobj;
-        pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is not registered"},
+        pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is read only"},
                                             {"var",   var}});
-        logger.error("PUSH request from '{}', the requested '{}' variable is not registered", from,
-                     var);
+        logger.error("PUSH request from '{}', the requested '{}' variable is read only", from, var);
     }
 }
 
-void RCS_Client::receive_SERVER_RET(QJsonObject ret) {
+void RCS_Client::receive_SERVER_RET(const QJsonObject &ret) {
     logger.warn("Service return {}", ret);
     emit RETURN(TcpConnect::SERVER_RET, ret);
 }
 
-void RCS_Client::receive_CLIENT_RET(QString from, QJsonObject ret) {
+void RCS_Client::receive_CLIENT_RET(const QString &from, const QJsonObject &ret) {
     logger.warn("Client return {}", ret);
     emit RETURN(TcpConnect::CLIENT_RET, ret);
+}
+
+void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter) {
+    callBackMap.insert(name, {getter, setter});
+}
+
+void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter) {
+    callBackMap.insert(name, {getter, nullptr});
+}
+
+int RCS_Client::UnregisterCallBack(const QString &name) {
+    return callBackMap.remove(name);
 }

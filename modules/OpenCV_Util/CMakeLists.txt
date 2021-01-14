@@ -29,7 +29,7 @@ if (OpenCV_FOUND)
             FILE ${PROJECT_NAME}Config.cmake
             DESTINATION lib/cmake/${PROJECT_NAME})
 else ()
-    message(STATUS "依赖不足，无法编译${PROJECT_NAME} 缺少 OpenCV")
+    message(STATUS "missing OpenCV cannot compile ${PROJECT_NAME}")
 endif ()
 
 

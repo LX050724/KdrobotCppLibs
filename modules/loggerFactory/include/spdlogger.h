@@ -2,7 +2,7 @@
  * @file spdlogger.h
  * @author yao
  * @date 2021年1月13日
- * @brief 基于spdlog的二次封装，内置错误流和
+ * @brief 基于spdlog的二次封装，内置错误流和标准输出流
  */
 
 #ifndef KDROBOTCPPLIBS_SPDLOGGER_H

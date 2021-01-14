@@ -17,6 +17,9 @@
 
 class RCS_Client : QObject {
 Q_OBJECT
+    using getCallback = std::function<QJsonObject(const QString &, const QJsonObject &)>;
+    using setCallback = std::function<void(const QString &, const QJsonObject &)>;
+    uint16_t TcpPort;
     spdlogger logger;
     QList<QNetworkAddressEntry> HostAddressEntry;
     QUdpSocket *udpSocket = nullptr;
@@ -28,8 +31,7 @@ Q_OBJECT
     bool Connected = false;
     QString ClientName;
 
-    QMap<QString, std::pair<std::function<QJsonObject(const QString &)>,
-            std::function<void(const QString &, const QJsonObject &)>>> GetCallBackMap;
+    QMap<QString, std::pair<getCallback, setCallback>> callBackMap;
 public:
 
     /**
@@ -37,7 +39,11 @@ public:
      * @param _ClientName 客户端名
      * @param parent 父对象
      */
-    RCS_Client(const QString &_ClientName, QObject *parent = nullptr);
+    RCS_Client(const QString &_ClientName, uint16_t _TcpPort = 8550, uint16_t _UdpPort = 8849,
+               QObject *parent = nullptr);
+
+    RCS_Client(const QString &_ClientName, const QHostAddress &addr, uint16_t _TcpPort = 8550,
+               QObject *parent = nullptr);
 
     /**
      * 析构函数
@@ -54,10 +60,48 @@ public:
      *               简单写法为<code>return {{"KeyString", val}, {"KeyString", val}, ...}};</code>
      * @param setter setter方法 第一参数为PUSH请求来源，第二参数为PUSH值
      */
-    void RegisterCallBack(const QString &name, const std::function<QJsonObject(const QString &)> &getter,
-                          const std::function<void(const QString &, const QJsonObject &)> &setter) {
-        GetCallBackMap.insert(name, {getter, setter});
+    void RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter);
+
+    /**
+     * 注册GET请求回调，PUSH会返回只读变量报错
+     * @param name 注册变量名
+     * @param getter getter方法 第一参数为GET请求来源，返回值为相应参数的值Json格式
+     *               简单写法为<code>return {{"KeyString", val}, {"KeyString", val}, ...}};</code>
+     */
+    void RegisterCallBack(const QString &name, const getCallback &getter);
+
+    /**
+     * 注册GET请求和PUSH请求回调，在类内使用，可绑定对象
+     * @param name 注册变量名
+     * @param obj1 对象指针
+     * @param getter getter方法
+     * @param obj2 对象指针
+     * @param setter setter方法
+     */
+    template<class T1, typename getterFUN, class T2, typename setterFUN>
+    void RegisterCallBack(const QString &name, T1 *obj1, getterFUN getter, T2 *obj2, setterFUN setter) {
+        using namespace std::placeholders;
+        this->RegisterCallBack(name, std::bind(getter, obj1, _1, _2), std::bind(setter, obj2, _1, _2));
     }
+
+    /**
+     * 注册GET请求回调，在类内使用，可绑定对象
+     * @param name 注册变量名
+     * @param obj1 对象指针
+     * @param getter getter方法
+     */
+    template<class T1, typename getterFUN>
+    void RegisterCallBack(const QString &name, T1 *obj1, getterFUN getter) {
+        using namespace std::placeholders;
+        this->RegisterCallBack(name, std::bind(getter, obj1, _1, _2));
+    }
+
+    /**
+     * 回调函数反注册
+     * @param name 变量名
+     * @return
+     */
+    int UnregisterCallBack(const QString &name);
 
     /**
      * 判断链接就绪
@@ -90,8 +134,8 @@ public:
      * @param target 请求目标客户端
      * @param var 变量名
      */
-    inline void GET(const QString &target, const QString &var) {
-        if (waitConnected()) pTcpConnect->send_GET(target, var);
+    inline void GET(const QString &target, const QString &var, const QJsonObject &info) {
+        if (waitConnected()) pTcpConnect->send_GET(target, var, info);
     }
 
     /**
@@ -109,15 +153,15 @@ protected slots:
 
     void UdpReadyRead();
 
-    void receive_GET(QString from, QString var);
+    void receive_GET(const QString &from, const QString &var, const QJsonObject &info);
 
-    void receive_PUSH(QString from, QString var, QJsonObject val);
+    void receive_PUSH(const QString &from, const QString &var, const QJsonObject &val);
 
-    void receive_BROADCAST(QString from, QString broadcastName, QJsonObject val);
+    void receive_BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &val);
 
-    void receive_SERVER_RET(QJsonObject ret);
+    void receive_SERVER_RET(const QJsonObject &ret);
 
-    void receive_CLIENT_RET(QString from, QJsonObject ret);
+    void receive_CLIENT_RET(const QString &from, const QJsonObject &ret);
 
 signals:
 
