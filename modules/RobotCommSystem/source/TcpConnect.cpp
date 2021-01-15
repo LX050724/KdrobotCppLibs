@@ -36,24 +36,46 @@ TcpConnect::TcpConnect(QTcpSocket *Socket, const QString &_name) : name(_name), 
     }
 }
 
+void TcpConnect::write(QByteArray data) {
+    if (socket->thread() != QThread::currentThread()) {
+        emit Thread_write(data);
+        return;
+    }
+    QByteArray MD5 = QCryptographicHash::hash(data, QCryptographicHash::Md5);
+    uint32_t size = data.size();
+    data.push_front({(const char *) &size, sizeof(uint32_t)});
+    data.push_front((char) 0xa5);
+    data.push_back(MD5);
+    if (!socket->isWritable() && !socket->waitForBytesWritten(1000)) {
+        logger.error("{}: waitForBytesWritten time out!", name);
+        return;
+    }
+    socket->write(data);
+}
+
 void TcpConnect::Socket_readyRead() {
     ReceiveBuff.push_back(socket->readAll());
     restart:
     auto dataPtr = ReceiveBuff.constData();
     int size = ReceiveBuff.size();
     for (int i = 0; i < size; i++) {
-        if (dataPtr[i] == (char) 0x5a) {
-            for (int j = i + 1; j < size; j++) {
-                if (dataPtr[j] == (char) 0xa5) {
-                    QByteArray MD5(dataPtr + j + 1, 16);
-                    QByteArray Data(dataPtr + i + 1, j - i - 1);
-                    QByteArray MD5Check = QCryptographicHash::hash(Data, QCryptographicHash::Md5);
-                    if (MD5 == MD5Check) {
-                        DecodeJson(Data);
-                        ReceiveBuff.remove(0, j + 17);
-                        goto restart;
-                    }
-                }
+        if (dataPtr[i] == (char) 0xa5) {
+            int dataPackSize = *(uint32_t *) (dataPtr + i + 1);
+            if (dataPackSize < 0)continue;
+            while (size - i - 5 - 16 < dataPackSize) {
+                socket->waitForReadyRead(1000);
+                ReceiveBuff.push_back(socket->readAll());
+                size = ReceiveBuff.size();
+            }
+            dataPtr = ReceiveBuff.constData();
+            QByteArray Data(dataPtr + i + 1 + 4, dataPackSize);
+            QByteArray MD5(dataPtr + i + 1 + 4 + dataPackSize, 16);
+            QByteArray MD5Check = QCryptographicHash::hash(Data, QCryptographicHash::Md5);
+            if (MD5 == MD5Check) {
+                DecodeJson(Data);
+                ReceiveBuff.remove(0, i + 1 + 1 + 4 + dataPackSize + 16);
+                if (ReceiveBuff.size())
+                    goto restart;
             }
         }
     }
@@ -148,22 +170,6 @@ void TcpConnect::DecodeJson(QByteArray &data) {
         default:
             logger.error("Unknown type {}\n{}", type, data);
     }
-}
-
-void TcpConnect::write(QByteArray data) {
-    if (socket->thread() != QThread::currentThread()) {
-        emit Thread_write(data);
-        return;
-    }
-    QByteArray MD5 = QCryptographicHash::hash(data, QCryptographicHash::Md5);
-    data.push_front((char) 0x5a);
-    data.push_back((char) 0xa5);
-    data.push_back(MD5);
-    if (!socket->isWritable() && !socket->waitForBytesWritten(100)) {
-        logger.error("{}: waitForBytesWritten time out!", name);
-        return;
-    }
-    socket->write(data);
 }
 
 void TcpConnect::WaitHEADTimeout() {
