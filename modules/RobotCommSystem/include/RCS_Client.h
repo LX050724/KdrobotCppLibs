@@ -15,7 +15,7 @@
 #include <QWaitCondition>
 #include "TcpConnect.h"
 
-class RCS_Client : QObject {
+class RCS_Client : public QObject {
 Q_OBJECT
     using getCallback = std::function<QJsonObject(const QString &, const QJsonObject &)>;
     using setCallback = std::function<void(const QString &, const QJsonObject &)>;
@@ -63,14 +63,6 @@ public:
     void RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter);
 
     /**
-     * 注册GET请求回调，PUSH会返回只读变量报错
-     * @param name 注册变量名
-     * @param getter getter方法 第一参数为GET请求来源，返回值为相应参数的值Json格式
-     *               简单写法为<code>return {{"KeyString", val}, {"KeyString", val}, ...}};</code>
-     */
-    void RegisterCallBack(const QString &name, const getCallback &getter);
-
-    /**
      * 注册GET请求和PUSH请求回调，在类内使用，可绑定对象
      * @param name 注册变量名
      * @param obj1 对象指针
@@ -85,15 +77,27 @@ public:
     }
 
     /**
-     * 注册GET请求回调，在类内使用，可绑定对象
+     * PUSH请求回调，在类内使用，可绑定对象
      * @param name 注册变量名
      * @param obj1 对象指针
      * @param getter getter方法
      */
     template<class T1, typename getterFUN>
-    void RegisterCallBack(const QString &name, T1 *obj1, getterFUN getter) {
+    void RegisterGetCallBack(const QString &name, T1 *obj1, getterFUN fun) {
         using namespace std::placeholders;
-        this->RegisterCallBack(name, std::bind(getter, obj1, _1, _2));
+        this->RegisterCallBack(name, std::bind(fun, obj1, _1, _2), {});
+    }
+
+    /**
+     * GET请求回调，在类内使用，可绑定对象
+     * @param name 注册变量名
+     * @param obj1 对象指针
+     * @param getter getter方法
+     */
+    template<class T1, typename getterFUN>
+    void RegisterPushCallBack(const QString &name, T1 *obj1, getterFUN fun) {
+        using namespace std::placeholders;
+        this->RegisterCallBack(name, {}, std::bind(fun, obj1, _1, _2));
     }
 
     /**
@@ -134,7 +138,7 @@ public:
      * @param target 请求目标客户端
      * @param var 变量名
      */
-    inline void GET(const QString &target, const QString &var, const QJsonObject &info) {
+    inline void GET(const QString &target, const QString &var, const QJsonObject &info = {}) {
         if (waitConnected()) pTcpConnect->send_GET(target, var, info);
     }
 
@@ -179,6 +183,8 @@ signals:
      * @param message 广播消息
      */
     void BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &message);
+
+    void disconnected(const QString &name);
 };
 
 

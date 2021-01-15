@@ -12,13 +12,13 @@
 void RCS_Server::tcpServer_newConnection() {
     while (pTcpServer->hasPendingConnections()) {
         QTcpSocket *socket = pTcpServer->nextPendingConnection();
-        connect(new TcpConnect(socket), SIGNAL(ServerReceive_HEAD(TcpConnect *, const QString &)),
-                this, SLOT(TcpConnect_receive_HEAD(TcpConnect *, const QString &)));
+        connect(new TcpConnect(socket), SIGNAL(ServerReceive_HEAD(TcpConnect * , const QString &)),
+                this, SLOT(TcpConnect_receive_HEAD(TcpConnect * , const QString &)));
     }
 }
 
 void RCS_Server::TcpConnect_disconnected(const QString &name) {
-    logger.warn("client '{}' disconnected", name.toStdString());
+    logger.warn("client '{}' disconnected", name);
     QMutexLocker lk(&mutex);
     clientList.remove(name);
 }
@@ -26,15 +26,18 @@ void RCS_Server::TcpConnect_disconnected(const QString &name) {
 void RCS_Server::TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, const QString &name) {
     QMutexLocker lk(&mutex);
     clientList.insert(name, pTcpConnect);
-    logger.info("client '{}' Connected", name.toStdString());
+    logger.info("client '{}' Connected", name);
     connect(pTcpConnect, SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
             this, SLOT(TcpConnect_receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(ServerReceive_GET(const QString &, const QString &, const QString &, const QJsonObject &)),
+    connect(pTcpConnect,
+            SIGNAL(ServerReceive_GET(const QString &, const QString &, const QString &, const QJsonObject &)),
             this, SLOT(TcpConnect_receive_GET(const QString &, const QString &, const QString &, const QJsonObject &)));
 
-    connect(pTcpConnect, SIGNAL(ServerReceive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)),
-            this, SLOT(TcpConnect_receive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)));
+    connect(pTcpConnect,
+            SIGNAL(ServerReceive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)),
+            this,
+            SLOT(TcpConnect_receive_PUSH(const QString &, const QString &, const QString &, const QJsonObject &)));
 
     connect(pTcpConnect, SIGNAL(ServerReceive_CLIENT_RET(const QString &, const QString &, const QJsonObject &)),
             this, SLOT(TcpConnect_receive_CLIENT_RET(const QString &, const QString &, const QJsonObject &)));
@@ -50,7 +53,7 @@ void RCS_Server::TcpConnect_receive_BROADCAST(const QString &from, const QString
         if (client->name != from)
             client->send_BROADCAST(from, broadcastName, message);
     }
-    logger.info("broadcast '{}' from '{}'", broadcastName.toStdString(), from.toStdString());
+    logger.info("broadcast '{}' from '{}'", broadcastName, from);
 }
 
 void RCS_Server::TcpConnect_receive_PUSH(const QString &from, const QString &sendTo, const QString &var,
@@ -58,9 +61,9 @@ void RCS_Server::TcpConnect_receive_PUSH(const QString &from, const QString &sen
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
         it.value()->send_PUSH(sendTo, var, obj);
-        logger.info("forwarding PUSH request from '{}' to '{}'", from.toStdString(), sendTo.toStdString());
+        logger.info("forwarding PUSH request from '{}' to '{}'", from, sendTo);
     } else {
-        logger.error("not find client '{}'", sendTo.toStdString());
+        logger.error("not find client '{}'", sendTo);
         clientList.find(from).value()->send_SERVER_RET({{"error", "not find client '" + sendTo + '\''}});
     }
 }
@@ -70,9 +73,9 @@ void RCS_Server::TcpConnect_receive_GET(const QString &from, const QString &send
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
         it.value()->send_GET(from, var, info);
-        logger.info("forwarding GET request from '{}' to '{}'", from.toStdString(), sendTo.toStdString());
+        logger.info("forwarding GET request from '{}' to '{}'", from, sendTo);
     } else {
-        logger.error("not find client '{}'", sendTo.toStdString());
+        logger.error("not find client '{}'", sendTo);
         clientList.find(from).value()->send_SERVER_RET({{"error", "not find client '" + sendTo + '\''}});
     }
 }
@@ -81,9 +84,9 @@ void RCS_Server::TcpConnect_receive_CLIENT_RET(const QString &from, const QStrin
     auto it = clientList.find(sendTo);
     if (it != clientList.end()) {
         it.value()->send_CLIENT_RET(from, ret);
-        logger.info("forwarding CLIENT_RET request sendTo '{}' to '{}'", sendTo.toStdString(), sendTo.toStdString());
+        logger.info("forwarding CLIENT_RET request from '{}' to '{}'", from, sendTo);
     } else {
-        logger.error("not find client '{}'", sendTo.toStdString());
+        logger.error("not find client '{}'", sendTo);
         clientList.find(sendTo).value()->send_SERVER_RET({{"error", "not find client '" + sendTo + '\''}});
     }
 }

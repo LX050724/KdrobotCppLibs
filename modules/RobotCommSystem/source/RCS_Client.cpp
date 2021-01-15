@@ -62,6 +62,8 @@ RCS_Client::RCS_Client(const QString &_ClientName, const QHostAddress &addr, uin
         connect(pTcpConnect,
                 SIGNAL(ClientReceive_SERVER_RET(const QJsonObject &)),
                 this, SLOT(receive_SERVER_RET(const QJsonObject &)));
+
+        connect(pTcpConnect, SIGNAL(disconnected(const QString &)), this, SIGNAL(disconnected(const QString &)));
         Connected = true;
         waitCondition.wakeAll();
         waitMutex.unlock();
@@ -115,6 +117,8 @@ void RCS_Client::UdpReadyRead() {
                                 SIGNAL(ClientReceive_SERVER_RET(const QJsonObject &)),
                                 this, SLOT(receive_SERVER_RET(const QJsonObject &)));
 
+                        connect(pTcpConnect, SIGNAL(disconnected(const QString &)), this,
+                                SIGNAL(disconnected(const QString &)));
                         udpSocket->deleteLater();
                         udpSocket = nullptr;
                         Connected = true;
@@ -135,13 +139,18 @@ void RCS_Client::UdpReadyRead() {
 
 void RCS_Client::receive_GET(const QString &from, const QString &var, const QJsonObject &info) {
     auto it = callBackMap.find(var);
-    if (it != callBackMap.end() && (*it).first) {
-        pTcpConnect->send_PUSH(from, var, ((*it).first)(from, info));
-        logger.info("Receives a GET request from '{}', gets the '{}' variable", from, var);
-    } else {
+    if (it == callBackMap.end()) {
         pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is not registered"},
                                             {"var",   var}});
         logger.error("GET request from '{}', the requested '{}' variable is not registered", from,
+                     var);
+    } else if ((*it).first) {
+        pTcpConnect->send_PUSH(from, var, ((*it).first)(from, info));
+        logger.info("Receives a GET request from '{}', gets the '{}' variable", from, var);
+    } else {
+        pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is write only"},
+                                            {"var",   var}});
+        logger.error("GET request from '{}', the requested '{}' variable is write only", from,
                      var);
     }
 }
@@ -153,7 +162,7 @@ void RCS_Client::receive_BROADCAST(const QString &from, const QString &broadcast
 
 void RCS_Client::receive_PUSH(const QString &from, const QString &var, const QJsonObject &val) {
     auto it = callBackMap.find(var);
-    if (it != callBackMap.end()) {
+    if (it == callBackMap.end()) {
         pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is not registered"},
                                             {"var",   var}});
         logger.error("PUSH request from '{}', the requested '{}' variable is not registered", from, var);
@@ -177,14 +186,10 @@ void RCS_Client::receive_CLIENT_RET(const QString &from, const QJsonObject &ret)
     emit RETURN(TcpConnect::CLIENT_RET, ret);
 }
 
-void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter) {
-    callBackMap.insert(name, {getter, setter});
-}
-
-void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter) {
-    callBackMap.insert(name, {getter, nullptr});
-}
-
 int RCS_Client::UnregisterCallBack(const QString &name) {
     return callBackMap.remove(name);
+}
+
+void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter) {
+    callBackMap.insert(name, {getter, setter});
 }

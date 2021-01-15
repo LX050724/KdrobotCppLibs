@@ -95,7 +95,8 @@ void TcpConnect::DecodeJson(QByteArray &data) {
             break;
         }
         case BROADCAST: {
-            emit Receive_BROADCAST(name, jobj.find("bordcastName")->toString(),
+            emit Receive_BROADCAST(mode == SERVER ? name : jobj.find("from")->toString(),
+                                   jobj.find("bordcastName")->toString(),
                                    jobj.find("bordcast")->toObject());
             break;
         }
