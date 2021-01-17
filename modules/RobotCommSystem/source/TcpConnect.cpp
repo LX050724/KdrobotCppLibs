@@ -7,6 +7,13 @@
 #include <QJsonObject>
 #include "TcpConnect.h"
 
+#define SUM_32BIT(N) ((uint8_t)((((N) >> 24) & 0xff) + (((N) >> 16) & 0xff) + (((N) >> 8) & 0xff) + ((N) & 0xff)))
+#define PACK_LEN_OFFSET 2
+#define HEAD_SUM_OFFSET 1
+#define HEAD_LEN 6
+#define HASH_LEN 16
+#define ADDI_LED HEAD_LEN + HASH_LEN
+
 TcpConnect::TcpConnect(QTcpSocket *Socket, const QString &_name) : name(_name), logger(__FUNCTION__) {
     Socket->setParent(this);
     if (name.isEmpty()) {
@@ -22,7 +29,6 @@ TcpConnect::TcpConnect(QTcpSocket *Socket, const QString &_name) : name(_name), 
     connect(this, SIGNAL(Thread_write(QByteArray)), this, SLOT(write(QByteArray)),
             Qt::QueuedConnection);
     connect(Socket, &QTcpSocket::disconnected, this, [=]() {
-        logger.warn("{}: disconnected", name);
         emit disconnected(name);
         deleteLater();
     });
@@ -44,6 +50,8 @@ void TcpConnect::write(QByteArray data) {
     QByteArray MD5 = QCryptographicHash::hash(data, QCryptographicHash::Md5);
     uint32_t size = data.size();
     data.push_front({(const char *) &size, sizeof(uint32_t)});
+    uint8_t head_sum = SUM_32BIT(size);
+    data.push_front((char) head_sum);
     data.push_front((char) 0xa5);
     data.push_back(MD5);
     if (!socket->isWritable() && !socket->waitForBytesWritten(1000)) {
@@ -60,20 +68,22 @@ void TcpConnect::Socket_readyRead() {
     int size = ReceiveBuff.size();
     for (int i = 0; i < size; i++) {
         if (dataPtr[i] == (char) 0xa5) {
-            int dataPackSize = *(uint32_t *) (dataPtr + i + 1);
-            if (dataPackSize < 0)continue;
-            while (size - i - 5 - 16 < dataPackSize) {
-                socket->waitForReadyRead(1000);
+            uint8_t head_sum = *(uint8_t *) (dataPtr + i + HEAD_SUM_OFFSET);
+            int dataPackSize = *(uint32_t *) (dataPtr + i + PACK_LEN_OFFSET);
+            if (dataPackSize < 0 || head_sum != SUM_32BIT(dataPackSize))
+                continue;
+            while (size - i < dataPackSize + ADDI_LED) {
+                if (!socket->waitForReadyRead(1000)) break;
                 ReceiveBuff.push_back(socket->readAll());
                 size = ReceiveBuff.size();
             }
             dataPtr = ReceiveBuff.constData();
-            QByteArray Data(dataPtr + i + 1 + 4, dataPackSize);
-            QByteArray MD5(dataPtr + i + 1 + 4 + dataPackSize, 16);
+            QByteArray Data(dataPtr + i + HEAD_LEN, dataPackSize);
+            QByteArray MD5(dataPtr + i + HEAD_LEN + dataPackSize, HASH_LEN);
             QByteArray MD5Check = QCryptographicHash::hash(Data, QCryptographicHash::Md5);
             if (MD5 == MD5Check) {
                 DecodeJson(Data);
-                ReceiveBuff.remove(0, i + 1 + 1 + 4 + dataPackSize + 16);
+                ReceiveBuff.remove(0, i + dataPackSize + ADDI_LED);
                 if (ReceiveBuff.size())
                     goto restart;
             }
@@ -88,14 +98,13 @@ void TcpConnect::DecodeJson(QByteArray &data) {
         logger.error("Json error:{} {}\n{}", error.error, error.errorString(), data);
         return;
     }
-    QJsonObject jobj = jdom.object();
-    PACK_TYPE type = (PACK_TYPE) jobj.value("type").toInt(-1);
-    QJsonObject body = jobj.value("body").toObject();
-    logger.debug("receive, Address={}, type={}, size={}", socket->peerAddress(), PACK_TYPE_ToString(type), data.size());
+    QJsonObject obj = jdom.object();
+    PACK_TYPE type = (PACK_TYPE) obj.value("type").toInt(-1);
+    QJsonObject body = obj.value("body").toObject();
 
     switch (type) {
         case HEAD: {
-            QString string = jobj.value("name").toString();
+            QString string = obj.value("name").toString();
             if (string.isEmpty()) {
                 logger.error("not find Address\n{}", data);
                 return;
@@ -105,7 +114,6 @@ void TcpConnect::DecodeJson(QByteArray &data) {
                 setObjectName(string);
                 socket->setObjectName(string + "_Socket");
                 timer->stop();
-                logger.debug("Receive HEAD name={}", name);
                 switch (mode) {
                     case SERVER:
                         emit ServerReceive_HEAD(this, string);
@@ -117,15 +125,15 @@ void TcpConnect::DecodeJson(QByteArray &data) {
             break;
         }
         case BROADCAST: {
-            emit Receive_BROADCAST(mode == SERVER ? name : jobj.find("from")->toString(),
-                                   jobj.find("bordcastName")->toString(),
-                                   jobj.find("bordcast")->toObject());
+            emit Receive_BROADCAST(mode == SERVER ? name : obj.find("from")->toString(),
+                                   obj.find("bordcastName")->toString(),
+                                   obj.find("bordcast")->toObject());
             break;
         }
         case PUSH: {
-            QString from_sendTo = jobj.find("from_sendTo")->toString();
-            QString tar_var = jobj.find("var")->toString();
-            QJsonObject tar_val = jobj.find("val")->toObject();
+            QString from_sendTo = obj.find("from_sendTo")->toString();
+            QString tar_var = obj.find("var")->toString();
+            QJsonObject tar_val = obj.find("val")->toObject();
             switch (mode) {
                 case SERVER:
                     emit ServerReceive_PUSH(name, from_sendTo, tar_var, tar_val);
@@ -137,9 +145,9 @@ void TcpConnect::DecodeJson(QByteArray &data) {
             break;
         }
         case GET: {
-            QString from_sendTo = jobj.find("from_sendTo")->toString();
-            QString tar_var = jobj.find("var")->toString();
-            QJsonObject info = jobj.find("info")->toObject();
+            QString from_sendTo = obj.find("from_sendTo")->toString();
+            QString tar_var = obj.find("var")->toString();
+            QJsonObject info = obj.find("info")->toObject();
             switch (mode) {
                 case SERVER:
                     emit ServerReceive_GET(name, from_sendTo, tar_var, info);
@@ -151,12 +159,15 @@ void TcpConnect::DecodeJson(QByteArray &data) {
             break;
         }
         case SERVER_RET: {
-            emit ClientReceive_SERVER_RET(jobj.find("ret")->toObject());
+            QJsonObject info = obj.find("ret")->toObject();
+            emit ClientReceive_SERVER_RET(info);
+            if (info.find("disconnect")->toBool(false))
+                socket->disconnectFromHost();
             break;
         }
         case CLIENT_RET: {
-            QString from_sendTo = jobj.find("from_sendTo")->toString();
-            QJsonObject ret = jobj.find("ret")->toObject();
+            QString from_sendTo = obj.find("from_sendTo")->toString();
+            QJsonObject ret = obj.find("ret")->toObject();
             switch (mode) {
                 case SERVER:
                     emit ServerReceive_CLIENT_RET(name, from_sendTo, ret);

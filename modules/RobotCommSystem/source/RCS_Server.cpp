@@ -6,8 +6,6 @@
 
 #include "RCS_Server.h"
 #include <QTcpSocket>
-#include <QJsonObject>
-#include <QFuture>
 
 void RCS_Server::tcpServer_newConnection() {
     while (pTcpServer->hasPendingConnections()) {
@@ -25,6 +23,12 @@ void RCS_Server::TcpConnect_disconnected(const QString &name) {
 
 void RCS_Server::TcpConnect_receive_HEAD(TcpConnect *pTcpConnect, const QString &name) {
     QMutexLocker lk(&mutex);
+    if (clientList.contains(name)) {
+        pTcpConnect->send_SERVER_RET({{"error",      "There is already a client with the same name"},
+                                      {"disconnect", true}});
+        return;
+    }
+
     clientList.insert(name, pTcpConnect);
     logger.info("client '{}' Connected", name);
     connect(pTcpConnect, SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
@@ -107,4 +111,13 @@ QList<QString> RCS_Server::getClientNameList() {
 
 size_t RCS_Server::getClientCount() {
     return clientList.count();
+}
+
+bool RCS_Server::disconnect(const QString &name) {
+    auto it = clientList.find(name);
+    if (it != clientList.end()) {
+        (*it)->deleteLater();
+        clientList.erase(it);
+        return true;
+    } else return false;
 }

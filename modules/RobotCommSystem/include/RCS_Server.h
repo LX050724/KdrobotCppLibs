@@ -24,11 +24,32 @@ Q_OBJECT
     QMutex mutex;
     QMap<QString, TcpConnect *> clientList;
 public:
+
+    /**
+     * 构造函数
+     * @param TcpPort 使用的Tcp端口
+     * @param udpRadio 是否开启Udp广播服务器IP
+     */
     RCS_Server(uint16_t TcpPort = 8850, bool udpRadio = true);
 
+    /**
+     * 获取客户端名字列表
+     * @return
+     */
     QList<QString> getClientNameList();
 
+    /**
+     * 获取客户端数量
+     * @return 客户端数量
+     */
     size_t getClientCount();
+
+    /**
+     * 断开指定客户端连接
+     * @param name 客户端名
+     * @return 查询到客户端并断开返回true，客户端不在列表中返回false
+     */
+    bool disconnect(const QString &name);
 
 signals:
     void NewClient(const QHostAddress &addr, const QString &name);
