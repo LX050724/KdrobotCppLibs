@@ -271,6 +271,8 @@ const char *TcpConnect::PACK_TYPE_ToString(TcpConnect::PACK_TYPE type) {
             return "SERVER_RET";
         case CLIENT_RET:
             return "CLIENT_RET";
+        case DIRECT_LINK:
+            return "DIRECT_LINK";
     }
     return "Unknown";
 }

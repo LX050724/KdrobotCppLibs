@@ -30,6 +30,7 @@ RCS_Client::RCS_Client(const QString &_ClientName, uint16_t _TcpPort, uint16_t _
     udpSocket->bind(_UdpPort, QUdpSocket::ShareAddress);
     connect(udpSocket, SIGNAL(readyRead()), this, SLOT(UdpReadyRead()));
     waitMutex.lock();
+    blockMutex.lock();
 }
 
 RCS_Client::RCS_Client(const QString &_ClientName, const QHostAddress &addr, uint16_t _TcpPort, QObject *parent)
@@ -71,6 +72,7 @@ RCS_Client::RCS_Client(const QString &_ClientName, const QHostAddress &addr, uin
         logger.error("Tcp Connect Time Out");
         throw std::runtime_error("Tcp Connect Time Out");
     }
+    blockMutex.lock();
 }
 
 void RCS_Client::UdpReadyRead() {
@@ -167,8 +169,17 @@ void RCS_Client::receive_PUSH(const QString &from, const QString &var, const QJs
                                             {"var",   var}});
         logger.error("PUSH request from '{}', the requested '{}' variable is not registered", from, var);
     } else if ((*it).second) {
-        ((*it).second)(from, val);
-        logger.info("Receives a PUSH request from '{}', push the '{}' variable", from, var);
+        if (blockMutex.tryLock()) {
+            if (blockVar == var && blockName == from) {
+                blockVal = val;
+                blockCondition.wakeAll();
+                logger.info("Receives a block PUSH request from '{}', push the '{}' variable", from, var);
+            }
+            blockMutex.unlock();
+        } else {
+            ((*it).second)(from, val);
+            logger.info("Receives a PUSH request from '{}', push the '{}' variable", from, var);
+        }
     } else {
         pTcpConnect->send_CLIENT_RET(from, {{"error", "variable is read only"},
                                             {"var",   var}});
@@ -192,4 +203,22 @@ int RCS_Client::UnregisterCallBack(const QString &name) {
 
 void RCS_Client::RegisterCallBack(const QString &name, const getCallback &getter, const setCallback &setter) {
     callBackMap.insert(name, {getter, setter});
+}
+
+QJsonObject RCS_Client::GET_Block(const QString &target, const QString &var, bool &timeout,
+                                  const QDeadlineTimer &deadline, const QJsonObject &info) {
+    timeout = false;
+    QMutexLocker lk(&GET_BlockMutex);
+    if (waitConnected(deadline)) {
+        blockName = target;
+        blockVar = var;
+        this->GET(target, var, info);
+        if (!blockCondition.wait(&blockMutex, deadline)) {
+            blockMutex.try_lock();
+            logger.error("GET_Block time out");
+        }
+        timeout = true;
+        return blockVal;
+    }
+    return {};
 }

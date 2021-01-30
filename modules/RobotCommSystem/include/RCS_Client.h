@@ -28,6 +28,12 @@ Q_OBJECT
     QMutex udpMutex;
     QMutex waitMutex;
     QWaitCondition waitCondition;
+
+    QMutex blockMutex, GET_BlockMutex;
+    QWaitCondition blockCondition;
+    QString blockName, blockVar;
+    QJsonObject blockVal;
+
     bool Connected = false;
     QString ClientName;
 
@@ -101,7 +107,7 @@ public:
     }
 
     /**
-     * 回调函数反注册
+     * 回调函数反注册，getter和setter全部注销
      * @param name 变量名
      * @return
      */
@@ -120,7 +126,7 @@ public:
      * @param deadline 超时时间
      * @return 链接成功
      */
-    bool waitConnected(QDeadlineTimer deadline = QDeadlineTimer(QDeadlineTimer::Forever)) {
+    bool waitConnected(const QDeadlineTimer &deadline = QDeadlineTimer(QDeadlineTimer::Forever)) {
         return Connected || waitCondition.wait(&waitMutex, deadline);
     }
 
@@ -137,10 +143,29 @@ public:
      * 发送GET请求
      * @param target 请求目标客户端
      * @param var 变量名
+     * @param info 附加信息
      */
     inline void GET(const QString &target, const QString &var, const QJsonObject &info = {}) {
         if (waitConnected()) pTcpConnect->send_GET(target, var, info);
     }
+
+    /**
+     * 发送GET请求，阻塞等待返回
+     * @note 阻塞请求不会调用setter回调函数，而是直接返回获取到的值
+     *       当遇到服务器返回错误或客户端返回错误时无法分辨，会继续等待知道超时，所以要确认请求是否正确
+     *       该函数带锁，严格上不支持多线程同时调用，会阻塞，且没有超时机制
+     *       该函数会调用{@link waitConnected}等待连接建立，超时时间同deadline
+     * @see GET waitConnected
+     * @param target 请求目标客户端
+     * @param var 变量名
+     * @param[out] timeout 返回超时状态
+     * @param deadline 超时时间
+     * @param info 附加信息
+     * @return 获取到的值
+     * @warning TODO 待测试
+     */
+    QJsonObject GET_Block(const QString &target, const QString &var, bool &timeout,
+                          const QDeadlineTimer &deadline, const QJsonObject &info = {});
 
     /**
      * 发送PUSH请求

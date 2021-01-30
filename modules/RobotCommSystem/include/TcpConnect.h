@@ -34,12 +34,13 @@ Q_OBJECT
 
 public:
     typedef enum {
-        HEAD,
-        BROADCAST,
-        PUSH,
-        GET,
-        SERVER_RET,
-        CLIENT_RET,
+        HEAD,           //!<@brief 身份头标识
+        BROADCAST,      //!<@brief 广播标识
+        PUSH,           //!<@brief 推送请求标识
+        GET,            //!<@brief 获取请求标识
+        SERVER_RET,     //!<@brief 服务端返回值标识
+        CLIENT_RET,     //!<@brief 客户端返回值标识
+        DIRECT_LINK,    //!<@brief 直连请求标识 TODO DIRECT_LINK未完成
     } PACK_TYPE;
 
     static const char *PACK_TYPE_ToString(PACK_TYPE type);
@@ -93,6 +94,7 @@ protected:
      * 发送GET请求，客户端服务器共用
      * @param from_sendTo 客户端调用时表示sentTo目的客户端，服务端调用时表示from来源
      * @param var 变量名
+     * @param info 附加信息
      */
     void send_GET(const QString &from_sendTo, const QString &var, const QJsonObject &info = QJsonObject());
 

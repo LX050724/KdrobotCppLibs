@@ -6,7 +6,7 @@
 
 #include "spdlogger.h"
 
-bool spdlogger::logToFile = false;
+bool spdlogger::isLogToFile = false;
 std::shared_ptr<spdlog::sinks::basic_file_sink_mt> spdlogger::FileSink = nullptr;
 
 spdlogger spdlogger::getLogger(const std::string &name) {
@@ -48,8 +48,8 @@ void spdlogger::disable_backtrace() {
 }
 
 void spdlogger::allLogger_logToFile(const std::string &filename, bool truncate) {
-    if(!logToFile) {
-        logToFile = true;
+    if (!isLogToFile) {
+        isLogToFile = true;
         FileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, truncate);
         spdlog::apply_all([=](const std::shared_ptr<spdlog::logger> &logger) {
             auto &sinks = logger->sinks();
@@ -64,11 +64,17 @@ void spdlogger::allLogger_logToFile(const std::string &filename, bool truncate) 
 }
 
 void spdlogger::AddSink(const spdlog::sink_ptr &sink) {
+    for (const auto &i : log->sinks())
+        if (i != sink) continue;
+        else return;
+    for (const auto &i : err_log->sinks())
+        if (i != sink) continue;
+        else return;
     log->sinks().push_back(sink);
     err_log->sinks().push_back(sink);
 }
 
 spdlogger::spdlogger(std::shared_ptr<spdlog::logger> _logger, std::shared_ptr<spdlog::logger> _err_logger) :
         log(_logger), err_log(_err_logger) {
-    if (logToFile) AddSink(FileSink);
+    if (isLogToFile) AddSink(FileSink);
 }

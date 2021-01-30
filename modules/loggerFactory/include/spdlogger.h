@@ -15,7 +15,7 @@
 #include <QtCompatibilityLayer.h>
 
 class spdlogger {
-    static bool logToFile;
+    static bool isLogToFile;
     static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> FileSink;
     std::shared_ptr<spdlog::logger> log, err_log;
 public:
@@ -77,7 +77,7 @@ public:
      * 关闭回溯功能
      */
     void disable_backtrace();
-    
+
     /**
      * 跟踪日志
      * @tparam T 
@@ -229,6 +229,16 @@ public:
      * @param sink 记录槽
      */
     void AddSink(const spdlog::sink_ptr &sink);
+
+    void LogToFile() {
+        if (FileSink != nullptr)
+            AddSink(FileSink);
+    }
+
+    inline void flush() {
+        log->flush();
+        err_log->flush();
+    }
 };
 
 
