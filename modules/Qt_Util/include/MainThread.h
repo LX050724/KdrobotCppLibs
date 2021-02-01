@@ -24,6 +24,7 @@
  *  int main(int argc, char *argv[]) {
  *      QCoreApplication app(argc, argv);
  *      MyMainThread myMainThread(app.arguments(), &app);
+ *      QObject::connect(&myMainThread, SIGNAL(finished()), &app, SLOT(quit()));
  *      return app.exec();
  *  }
  * </code>
@@ -35,13 +36,19 @@ protected:
     spdlogger logger;
     JsonConfig config;
     QStringList args;
+    volatile bool running = true;
 public:
     MainThread(const QStringList &args, QObject *parent = nullptr);
+
+    virtual ~MainThread();
 
 protected:
     void run() override final;
 
-    virtual int main(const QStringList &args) = 0;
+    virtual void main(const QStringList &args) = 0;
+
+signals:
+    int finished();
 };
 
 #endif //KDROBOTCPPLIBS_MAINTHREAD_H

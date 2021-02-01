@@ -41,8 +41,16 @@ MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(paren
 
 void MainThread::run() {
     logger.info("Thread start");
-    int code = main(args);
+    main(args);
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->flush(); });
     logger.flush();
-    ::exit(code);
+    emit finished();
+}
+
+MainThread::~MainThread() {
+    if (this->isRunning() && running) {
+        running = false;
+        this->quit();
+        this->wait();
+    }
 }

@@ -30,7 +30,7 @@ QJsonValue JsonConfig::findObject(const QString &path) {
     auto object = jsonDocument.object();
     for (const QString &node : list) {
         auto TmpObj = object[node];
-        if(!TmpObj.isNull() && TmpObj.isObject()) {
+        if (!TmpObj.isNull() && TmpObj.isObject()) {
             object = TmpObj.toObject();
         } else return TmpObj;
     }

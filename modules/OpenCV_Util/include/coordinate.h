@@ -10,6 +10,7 @@
 #define Ran2Deg(_Ran_) ((_Ran_) / CS_2PI * 360)
 
 class EulerAngle;
+
 class Rect_COORD;
 
 /**

@@ -59,7 +59,7 @@ auto inline lineAngle(const cv::Point_<T> &a, const cv::Point_<T> &b) {
  * @param shift 坐标点的小数点位数
  */
 void drawRotatedRect(cv::InputOutputArray Img, cv::RotatedRect rect, const cv::Scalar &color,
-              int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
+                     int thickness = 1, int lineType = cv::LINE_8, int shift = 0);
 
 /**
  * 通道一带有偏置的InRange，带有OpenMP多线程加速

@@ -47,7 +47,7 @@ public:
     * @param  如果设置ROI,ROI的偏移量
     * @retval status
     */
-    bool GetSpatialLocation(SpatialLocation &Output, std::vector <cv::Point2f> Points2D,
+    bool GetSpatialLocation(SpatialLocation &Output, std::vector<cv::Point2f> Points2D,
                             const cv::Point2f &offset = cv::Point2f(0, 0));
 
     /**
@@ -56,7 +56,7 @@ public:
     */
     inline bool GetSpatialLocation(SpatialLocation &Output, const cv::RotatedRect &rect,
                                    const cv::Point &offset = cv::Point(0, 0)) {
-        std::vector <cv::Point2f> Points2D(4);
+        std::vector<cv::Point2f> Points2D(4);
         rect.points(Points2D.data());
         return GetSpatialLocation(Output, Points2D, cv::Point2f(offset));
     }
@@ -76,7 +76,7 @@ private:
     double TargetHeight;                //目标高度
     double TargetWidth;                 //目标宽度
 
-    std::vector <cv::Point3f> Points3D;  //转化的目标3D点集
+    std::vector<cv::Point3f> Points3D;  //转化的目标3D点集
 
     SpatialLocation spatial_location;   //目标空间位置
 };

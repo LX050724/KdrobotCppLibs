@@ -23,7 +23,7 @@ public:
     JsonConfig(const QString &filename);
 
     JsonConfig(const JsonConfig &copy) :
-            logger(copy.logger), jsonDocument(copy.jsonDocument) {
+            jsonDocument(copy.jsonDocument), logger(copy.logger) {
         opened = copy.opened;
     }
 

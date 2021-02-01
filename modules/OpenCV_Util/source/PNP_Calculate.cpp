@@ -49,14 +49,14 @@ void PNP_Calculate::SetTargetSize(double height, double width) {
 
     Points3D.clear();
 
-    Points3D.push_back(cv::Point3f((float)-half_x, (float)-half_y, 0.0f));
-    Points3D.push_back(cv::Point3f((float) half_x, (float)-half_y, 0.0f));
+    Points3D.push_back(cv::Point3f((float) -half_x, (float) -half_y, 0.0f));
+    Points3D.push_back(cv::Point3f((float) half_x, (float) -half_y, 0.0f));
     Points3D.push_back(cv::Point3f((float) half_x, (float) half_y, 0.0f));
-    Points3D.push_back(cv::Point3f((float)-half_x, (float) half_y, 0.0f));
+    Points3D.push_back(cv::Point3f((float) -half_x, (float) half_y, 0.0f));
 }
 
 bool PNP_Calculate::GetSpatialLocation(SpatialLocation &Output, std::vector<cv::Point2f> Points2D,
-                                          const cv::Point2f &offset) {
+                                       const cv::Point2f &offset) {
     if (Points2D.size() < 4)
         return false;
 

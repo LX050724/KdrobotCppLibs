@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
     RCS_Server *server;
     try {
         server = new RCS_Server(port, !parser.isSet(noUdp));
+        (void) server;
     } catch (const std::runtime_error &e) {
         logger.error(e.what());
         return -1;

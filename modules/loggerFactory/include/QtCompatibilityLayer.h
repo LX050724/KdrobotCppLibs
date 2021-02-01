@@ -15,28 +15,33 @@
 #include <QtCore>
 #include <QtNetwork/QHostAddress>
 
-template<typename OStream>
-OStream &operator<<(OStream &os, const QString &c) {
+template<class _Traits>
+inline std::basic_ostream<char, _Traits> &
+operator<<(std::basic_ostream<char, _Traits> &os, const QString &c) {
     return os << c.toLocal8Bit().toStdString();
 }
 
-template<typename OStream>
-OStream &operator<<(OStream &os, const QByteArray &c) {
+template<class _Traits>
+inline std::basic_ostream<char, _Traits> &
+operator<<(std::basic_ostream<char, _Traits> &os, const QByteArray &c) {
     return os << c.toStdString();
 }
 
-template<typename OStream>
-OStream &operator<<(OStream &os, const QJsonObject &c) {
+template<class _Traits>
+inline std::basic_ostream<char, _Traits> &
+operator<<(std::basic_ostream<char, _Traits> &os, const QJsonObject &c) {
     return os << QJsonDocument(c);
 }
 
-template<typename OStream>
-OStream &operator<<(OStream &os, const QJsonDocument &c) {
+template<class _Traits>
+inline std::basic_ostream<char, _Traits> &
+operator<<(std::basic_ostream<char, _Traits> &os, const QJsonDocument &c) {
     return os << c.toJson();
 }
 
-template<typename OStream>
-OStream &operator<<(OStream &os, const QHostAddress &c) {
+template<class _Traits>
+inline std::basic_ostream<char, _Traits> &
+operator<<(std::basic_ostream<char, _Traits> &os, const QHostAddress &c) {
     return os << c.toString();
 }
 
