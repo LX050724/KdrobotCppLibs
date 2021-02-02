@@ -67,12 +67,11 @@ void VCOMCOMM::portReadyRead() {
         if (len + 8 != data.size())
             return;
         uint16_t crc = *((uint16_t *) (pdata + 6 + len));
-        std::vector<uint8_t> stdData(len);
-        memcpy(stdData.data(), pdata + 6, len);
-        uint16_t c = CRC::Verify_CRC16_Check_Sum(stdData);
+        QByteArray array((const char *)(pdata + 6), len);
+        uint16_t c = CRC::Verify_CRC16_Check_Sum(array);
         if (len == 0 || c == crc) {
             logger->debug("RX: fun=0x{:02X}, id=0x{:04X}, crc=0x{:04X}|0x{:04X}", fun, id, crc, c);
-            emit receiveData(fun, id, stdData);
+            emit receiveData(fun, id, array);
         } else logger->warn("RX: fun=0x{:02X}, id=0x{:04X}, crc=0x{:04X}|0x{:04X} CRC Error", fun, id, crc, c);
     }
 }
@@ -117,7 +116,7 @@ void VCOMCOMM::portErrorOccurred(SerialPortError error) {
     }
 }
 
-void VCOMCOMM::Transmit(uint8_t fun_code, uint16_t id, const std::vector<uint8_t> &data) {
+void VCOMCOMM::Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data) {
     if (thread_id != QThread::currentThreadId()) {
         emit CrossThreadTransmitSignal(fun_code, id, data);
         return;

@@ -19,7 +19,7 @@ if (Qt${QT_VERSION}Core_FOUND AND Qt${QT_VERSION}Network_FOUND)
 
     target_link_libraries(RobotCommSystem PRIVATE ${REQUIRED_LIBS_QUALIFIED})
 
-    target_link_libraries(RobotCommSystem PRIVATE loggerFactory)
+    target_link_libraries(RobotCommSystem PRIVATE loggerFactory Qt_Util)
 
     set(MY_PUBLIC_HEADERS
             "${CMAKE_CURRENT_SOURCE_DIR}/include/HostAddressRadio.h"

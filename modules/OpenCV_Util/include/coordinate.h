@@ -1,3 +1,10 @@
+/**
+ * @file coordinate.h
+ * @author yao
+ * @date 2021年2月2日
+ * @brief 坐标系定义
+ */
+
 #ifndef KDROBOTCPPLIBS_COORDINATE_H
 #define KDROBOTCPPLIBS_COORDINATE_H
 

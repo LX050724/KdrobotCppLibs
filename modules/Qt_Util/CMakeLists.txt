@@ -23,6 +23,7 @@ if (Qt${QT_VERSION}Core_FOUND)
     endif ()
 
     set(MY_PUBLIC_HEADERS
+            "${CMAKE_CURRENT_SOURCE_DIR}/include/CRC.h"
             "${CMAKE_CURRENT_SOURCE_DIR}/include/MainThread.h"
             "${CMAKE_CURRENT_SOURCE_DIR}/include/JsonConfig.h")
 

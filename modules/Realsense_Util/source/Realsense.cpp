@@ -1,3 +1,9 @@
+/**
+ * @file Realsense.cpp
+ * @author yao
+ * @date 2021年2月2日
+ */
+
 #include <opencv2/opencv.hpp>
 #include "Realsense.h"
 #include <QFuture>

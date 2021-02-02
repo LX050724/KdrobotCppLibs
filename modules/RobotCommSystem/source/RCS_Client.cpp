@@ -111,6 +111,9 @@ void RCS_Client::UdpReadyRead() {
                                 SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
                                 this, SLOT(receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
+                        connect(pTcpConnect, SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
+                                this, SIGNAL(signal_BROADCAST(const QString &, const QString &, const QJsonObject &)));
+
                         connect(pTcpConnect,
                                 SIGNAL(ClientReceive_CLIENT_RET(const QString &, const QJsonObject &)),
                                 this, SLOT(receive_CLIENT_RET(const QString &, const QJsonObject &)));
@@ -159,7 +162,6 @@ void RCS_Client::receive_GET(const QString &from, const QString &var, const QJso
 
 void RCS_Client::receive_BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &val) {
     logger.info("Receives a BROADCAST from '{}', broadcastName:'{}'", from, broadcastName);
-    emit BROADCAST(from, broadcastName, val);
 }
 
 void RCS_Client::receive_PUSH(const QString &from, const QString &var, const QJsonObject &val) {
@@ -189,12 +191,12 @@ void RCS_Client::receive_PUSH(const QString &from, const QString &var, const QJs
 
 void RCS_Client::receive_SERVER_RET(const QJsonObject &ret) {
     logger.warn("Service return {}", ret);
-    emit RETURN(TcpConnect::SERVER_RET, ret);
+    emit signal_RETURN(TcpConnect::SERVER_RET, ret);
 }
 
 void RCS_Client::receive_CLIENT_RET(const QString &from, const QJsonObject &ret) {
     logger.warn("Client return {}", ret);
-    emit RETURN(TcpConnect::CLIENT_RET, ret);
+    emit signal_RETURN(TcpConnect::CLIENT_RET, ret);
 }
 
 int RCS_Client::UnregisterCallBack(const QString &name) {

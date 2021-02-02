@@ -1,3 +1,9 @@
+/**
+ * @file JsonConfig.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "JsonConfig.h"
 #include <QJsonObject>
 #include <QFile>

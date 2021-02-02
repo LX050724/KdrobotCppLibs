@@ -13,6 +13,7 @@
 #include <QUdpSocket>
 #include <QNetworkAddressEntry>
 #include <QWaitCondition>
+#include <QTcpServer>
 #include "TcpConnect.h"
 
 class RCS_Client : public QObject {
@@ -199,7 +200,7 @@ signals:
      * @param type
      * @param ret
      */
-    void RETURN(TcpConnect::PACK_TYPE type, const QJsonObject &ret);
+    void signal_RETURN(TcpConnect::PACK_TYPE type, const QJsonObject &ret);
 
     /**
      * 收到广播信号量
@@ -207,7 +208,7 @@ signals:
      * @param broadcastName 广播名
      * @param message 广播消息
      */
-    void BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &message);
+    void signal_BROADCAST(const QString &from, const QString &broadcastName, const QJsonObject &message);
 
     void disconnected(const QString &name);
 };

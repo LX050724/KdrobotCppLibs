@@ -1,3 +1,9 @@
+/**
+ * @file MainThread.cpp
+ * @author yao
+ * @date 2021年1月13日
+ */
+
 #include "MainThread.h"
 
 MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(parent), logger("main") {
@@ -43,6 +49,7 @@ void MainThread::run() {
     logger.info("Thread start");
     main(args);
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->flush(); });
+    running = false;
     logger.flush();
     emit finished();
 }

@@ -14,13 +14,12 @@ find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 
 if (Qt${QT_VERSION}Core_FOUND AND Qt${QT_VERSION}SerialPort_FOUND)
 
-    add_library(${PROJECT_NAME} source/VCOMCOMM.cpp source/CRC.cpp include/CRC.h include/VCOMCOMM.h)
+    add_library(${PROJECT_NAME} source/VCOMCOMM.cpp include/VCOMCOMM.h)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC ${REQUIRED_LIBS_QUALIFIED})
-    target_link_libraries(${PROJECT_NAME} PUBLIC loggerFactory)
+    target_link_libraries(${PROJECT_NAME} PUBLIC loggerFactory Qt_Util)
 
     set(MY_PUBLIC_HEADERS
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/CRC.h"
             "${CMAKE_CURRENT_SOURCE_DIR}/include/VCOMCOMM.h")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES

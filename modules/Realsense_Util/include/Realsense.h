@@ -1,3 +1,10 @@
+/**
+ * @file Realsense.h
+ * @author yao
+ * @date 2021年2月2日
+ * @brief Realsense摄像头驱动
+ */
+
 #ifndef KDROBOTCPPLIBS_REALSENSE_H
 #define KDROBOTCPPLIBS_REALSENSE_H
 

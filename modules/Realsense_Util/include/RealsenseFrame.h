@@ -1,3 +1,10 @@
+/**
+ * @file RealsenseFrame.h
+ * @author yao
+ * @date 2021年2月2日
+ * @brief Realsense帧对象
+ */
+
 #ifndef KDROBOTCPPLIBS_REALSENSEFRAME_H
 #define KDROBOTCPPLIBS_REALSENSEFRAME_H
 

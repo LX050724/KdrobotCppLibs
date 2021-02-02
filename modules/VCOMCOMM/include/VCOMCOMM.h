@@ -47,7 +47,7 @@ public slots:
      * @param id 消息ID
      * @param data 数据
      */
-    void Transmit(uint8_t fun_code, uint16_t id, const std::vector<uint8_t> &data);
+    void Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data);
 
 signals:
     /**
@@ -56,7 +56,7 @@ signals:
      * @param id 数据包ID
      * @param data 数据
      */
-    void receiveData(uint8_t fun_code, uint16_t id, std::vector<uint8_t> data);
+    void receiveData(uint8_t fun_code, uint16_t id, const QByteArray &data);
 
     /**
      * @brief 通过信号量实现跨线程发送
@@ -64,7 +64,7 @@ signals:
      * @param id 消息ID
      * @param data 数据
      */
-    void CrossThreadTransmitSignal(uint8_t fun_code, uint16_t id, const std::vector<uint8_t> &data);
+    void CrossThreadTransmitSignal(uint8_t fun_code, uint16_t id, const QByteArray &data);
 };
 
 

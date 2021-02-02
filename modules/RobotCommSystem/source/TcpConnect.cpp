@@ -5,13 +5,14 @@
  */
 
 #include <QJsonObject>
+#include <CRC.h>
 #include "TcpConnect.h"
 
 #define SUM_32BIT(N) ((uint8_t)((((N) >> 24) & 0xff) + (((N) >> 16) & 0xff) + (((N) >> 8) & 0xff) + ((N) & 0xff)))
 #define PACK_LEN_OFFSET 2
 #define HEAD_SUM_OFFSET 1
 #define HEAD_LEN 6
-#define HASH_LEN 16
+#define HASH_LEN 2
 #define ADDI_LED HEAD_LEN + HASH_LEN
 
 TcpConnect::TcpConnect(QTcpSocket *Socket, const QString &_name) : name(_name), logger(__FUNCTION__) {
@@ -47,13 +48,13 @@ void TcpConnect::write(QByteArray data) {
         emit Thread_write(data);
         return;
     }
-    QByteArray MD5 = QCryptographicHash::hash(data, QCryptographicHash::Md5);
+    uint16_t crc = CRC::Verify_CRC16_Check_Sum(data);
     uint32_t size = data.size();
     data.push_front({(const char *) &size, sizeof(uint32_t)});
     uint8_t head_sum = SUM_32BIT(size);
     data.push_front((char) head_sum);
     data.push_front((char) 0xa5);
-    data.push_back(MD5);
+    data.append((const char *) &crc, 2);
     if (!socket->isWritable() && !socket->waitForBytesWritten(1000)) {
         logger.error("{}: waitForBytesWritten time out!", name);
         return;
@@ -79,9 +80,9 @@ void TcpConnect::Socket_readyRead() {
             }
             dataPtr = ReceiveBuff.constData();
             QByteArray Data(dataPtr + i + HEAD_LEN, dataPackSize);
-            QByteArray MD5(dataPtr + i + HEAD_LEN + dataPackSize, HASH_LEN);
-            QByteArray MD5Check = QCryptographicHash::hash(Data, QCryptographicHash::Md5);
-            if (MD5 == MD5Check) {
+            uint16_t crc = *(uint16_t *)(dataPtr + i + HEAD_LEN + dataPackSize);
+            uint16_t crcCheck = CRC::Verify_CRC16_Check_Sum(Data);
+            if (crc == crcCheck) {
                 DecodeJson(Data);
                 ReceiveBuff.remove(0, i + dataPackSize + ADDI_LED);
                 if (ReceiveBuff.size())

@@ -1,3 +1,9 @@
+/**
+ * @file coordinate.cpp
+ * @author yao
+ * @date 2021年2月2日
+ */
+
 #include "coordinate.h"
 #include <math.h>
 
