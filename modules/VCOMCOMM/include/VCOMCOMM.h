@@ -8,15 +8,15 @@
 #define KDROBOTCPPLIBS_VCOMCOMM_PC_H
 
 #include <QSerialPort>
-#include <spdlog/spdlog.h>
+#include <spdlogger.h>
 
 class VCOMCOMM : public QSerialPort {
 Q_OBJECT
 private:
     uint16_t pid, vid;
     Qt::HANDLE thread_id;
-    std::shared_ptr<spdlog::logger> logger;
-    std::shared_ptr<spdlog::logger> err_logger;
+    spdlogger logger;
+
 public:
 
     /**
@@ -32,9 +32,6 @@ public:
      * @return 自动连接是否成功
      */
     bool auto_connect();
-
-protected:
-    void loggerFactory();
 
 protected slots:
     void portReadyRead();
