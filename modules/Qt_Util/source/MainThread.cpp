@@ -8,39 +8,38 @@
 
 MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(parent), logger("main") {
     this->args = args;
+    QCommandLineOption currentPath({"d", "directory"}, "Set the working directory", "currentPath");
     QCommandLineOption log({"l", "log"}, "Set the log file path. default disable", "log");
     QCommandLineOption conf({"c", "config"}, "set config file path", "config", "config.json");
     QCommandLineParser parser;
     parser.addHelpOption();
-    parser.addOptions({log, conf});
+    parser.addOptions({currentPath, log, conf});
     parser.process(args);
+
     spdlogger l("MainThread");
-    QString logFile = parser.value("log");
-    if (!logFile.isEmpty()) {
-        spdlogger::allLogger_logToFile(logFile.toStdString());
-        logger.LogToFile();
-        l.info("log to file '{}'", logFile);
-    }
-    l.info("Build Time: {} {}", __DATE__, __TIME__);
-#if defined(__DEBUG__)
-    spdlog::set_level(spdlog::level::debug);
-    l.info("Build type: Debug");
-#else
-    l.info("Build type: Release");
-#endif
-    QString configFile = parser.value("config");
-    config = JsonConfig::factory(configFile);
+    QString configFile = parser.value(conf);
+    QString logFile = parser.value(log);
+    QString path = parser.value(currentPath);
+    config.open(configFile);
+    if (path.isEmpty() && config.isOpen()) path = config.getPath();
+
     if (config.isOpen()) {
-        l.info("open the config file'{}'", configFile.toStdString());
-        if (logFile.isEmpty()) {
-            auto logPath = config.findObject("log").toString();
-            if (!logPath.isEmpty()) {
-                l.info("log to file '{}'", logPath);
-                spdlogger::allLogger_logToFile(logPath.toStdString());
-                logger.LogToFile();
-            }
+        l.info("open the config file'{}'", configFile);
+        auto confLog = config.findObject("log").toString();
+        if (logFile.isEmpty() && !confLog.isEmpty()) {
+            logFile = confLog;
         }
-    } else l.warn("can't open the config file'{}'", configFile.toStdString());
+    } else l.warn("can't open the config file'{}'", configFile);
+
+    if (!path.isEmpty()) {
+        if (!QDir::setCurrent(path)) l.warn("can not set current path '{}'", path);
+        else l.info("set current path '{}'", path);
+    } else l.info("current path '{}'", QDir::currentPath());
+
+    if (!logFile.isEmpty()) {
+        l.info("log to file '{}'", logFile);
+        spdlogger::allLogger_logToFile(logFile.toStdString());
+    }
     l.flush();
     this->start();
 }
@@ -51,7 +50,7 @@ void MainThread::run() {
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) { l->flush(); });
     running = false;
     logger.flush();
-    emit finished();
+    emit threadExit();
 }
 
 MainThread::~MainThread() {

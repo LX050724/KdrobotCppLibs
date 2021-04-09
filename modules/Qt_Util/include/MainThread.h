@@ -18,10 +18,14 @@
  * @details
  *     使用方法：主线程构造模板应继承该类然后重写main方法
  *     {@code
+ *      #include <MainThread.h>
+ *
  *      class MyMainThread : public MainThread {
- *      Q_OBJECT
+ *          Q_OBJECT
  *      public:
- *          using MainThread::MainThread;
+ *          MyMainThread(const QStringList &args, QObject *parent = nullptr) : MainThread(args, parent) {
+ *              //Init your self object
+ *          }
  *      protected:
  *          void main(const QStringList &args) override {
  *              logger.info("Hello World");
@@ -31,11 +35,12 @@
  *      {@code
  *      int main(int argc, char *argv[]) {
  *          QCoreApplication app(argc, argv);
- *          MyMainThread myMainThread(app.arguments(), &app);
- *          QObject::connect(&myMainThread, SIGNAL(finished()), &app, SLOT(quit()));
+ *          MyMainThread myMainThread(app.arguments());
+ *          QObject::connect(&myMainThread, SIGNAL(threadExit()), &app, SLOT(quit()));
  *          return app.exec();
  *      }}
  * main方法运行于一个新的线程内，此时Qt框架已经启动
+ * @warning 注意带有Qt信号量的对象应在主线程内构造，防止消息循环被阻塞
  */
 class MainThread : public QThread {
 Q_OBJECT
@@ -47,12 +52,18 @@ protected:
 public:
 
     /**
-     * 构造函数
+     * @brief 构造函数
      * @details
      * 执行的功能有
-     * 1. 检查命令行参数-l <file>或--log <file>指定全局日期输出到文件
-     * 2. 检查命令行参数-c <file>或--config <file>指定配置文件路径
-     * 3. 启动线程调用main方法
+     * 1. 检查命令行参数-l, --log <log>指定全局日期输出到文件
+     * 2. 检查命令行参数-c, --config <config>指定配置文件路径
+     * 3. 检查命令行参数-d, --directory <currentPath>指定工作目录
+     * 4. 读取配置文件，更改运行目录，重定向日志
+     * 5. 启动线程调用main方法
+     *
+     * @note 建议自行写构造函数用于初始化和线程有关的对象。
+     * @note 没有设置命令行参数或配置文件则运行路径不变。
+     *       设置运行目录优先级为先命令行参数，配置文件所在路径。
      * @param args 命令行参数
      * @param parent 父对象指针,可有可无
      */
@@ -86,7 +97,7 @@ signals:
     /**
      * @brief 线程退出信号量
      */
-    int finished();
+    int threadExit();
 };
 
 #endif //KDROBOTCPPLIBS_MAINTHREAD_H

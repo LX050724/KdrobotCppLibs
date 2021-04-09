@@ -17,64 +17,75 @@
 #include "spdlogger.h"
 
 class JsonConfig {
-    QJsonDocument jsonDocument;
-    QString Path;
-    bool opened = false;
-    spdlogger logger;
-    QMutex mut;
-public:
+    static QMap<QString, JsonConfig> JsonConfigMap;     //!<@brief 全局索引
+    QJsonDocument jsonDocument;                         //!<@brief Json根对象
+    QString Path;                                       //!<@brief 文件所在路径
+    bool opened = false;                                //!<@brief 文件打开成功标志
+    spdlogger logger;                                   //!<@brief 日志器
 
+public:
     JsonConfig() : logger(__FUNCTION__) {};
 
-    JsonConfig(const QString &filename);
+    JsonConfig(const QString &filePath);
 
-    JsonConfig(const JsonConfig &copy) :
-            jsonDocument(copy.jsonDocument), logger(copy.logger) {
-        opened = copy.opened;
+    JsonConfig operator=(const JsonConfig &jsonConfig);
+
+    /**
+     * @brief 打开配置文件
+     * @param filePath 配置文件路径
+     * @return 打开成功
+     */
+    bool open(const QString &filePath = "config.json");
+
+    /**
+     * @brief 判断配置文件是否成功打开
+     * @return
+     */
+    inline bool isOpen() {
+        return opened;
     }
 
-    JsonConfig(JsonConfig &&m) :
-            jsonDocument(std::move(m.jsonDocument)),
-            Path(std::move(m.Path)), logger(std::move(m.logger)) {
-        opened = m.opened;
+    /**
+     * @brief 获取配置文件所在路径
+     * @return 配置文件所在路径
+     */
+    inline const QString &getPath() const {
+        return Path;
     }
 
-
-    JsonConfig operator=(const JsonConfig &jsonConfig) {
-        this->logger = jsonConfig.logger;
-        this->jsonDocument = jsonConfig.jsonDocument;
-        this->opened = jsonConfig.opened;
-        return *this;
-    }
-
-    bool open(const QString &filename = "config.json");
-
-    bool isOpen();
-
-    const QString &getPath() const;
-
+    /**
+     * @brief 按路径查找对象，使用'/'分隔
+     * @param path 对象路径
+     * @return Json对象
+     */
     QJsonValue findObject(const QString &path);
 
-    int findInt(const QString &path, int defaultValue, std::function<bool(int)> cmp = [](int a) { return true; }) {
-        int val = findObject(path).toInt(defaultValue);
-        if (!cmp(val)) {
-            logger.error("'{}' missing or error", path.toStdString());
-            throw std::runtime_error("config error");
-        }
-        return val;
-    }
+    /**
+     * @brief 按路径查找查找整型对象，并按给出的条件判断是否合法，
+     *        不合法抛出异常
+     * @param path 对象路径
+     * @param defaultValue 默认值
+     * @param cmp 判断规则
+     * @return 整型数值
+     */
+    int findInt(const QString &path, int defaultValue, std::function<bool(int)> cmp = [](int a) { return true; });
 
+    /**
+     * @brief 默认值为0的重载{@see findInt(const QString &, int, std::function<bool(int)>)}
+     * @param path 对象路径
+     * @param cmp 判断规则
+     * @return 整型数值
+     */
     inline int findInt(const QString &path, std::function<bool(int)> cmp = [](int a) { return true; }) {
         return findInt(path, 0, cmp);
     }
 
-    static JsonConfig &factory(const QString &filename = "config.json") {
-        static QMap<QString, JsonConfig> JsonConfigMap;
-        if (!JsonConfigMap.contains(filename)) {
-            return JsonConfigMap.insert(filename, JsonConfig(filename)).value();
-        }
-        return JsonConfigMap[filename];
-    }
+    /**
+     * @brief JsonConfig工厂方法
+     * @param filePath 文件名
+     * @return JsonConfig对象
+     */
+    static JsonConfig &factory(const QString &filePath = "config.json");
 };
 
 

@@ -5,16 +5,19 @@
  */
 
 #include "JsonConfig.h"
-#include <QJsonObject>
-#include <QFile>
 
-JsonConfig::JsonConfig(const QString &filename) : logger(__FUNCTION__) {
-    opened = open(filename);
+QMap<QString, JsonConfig> JsonConfig::JsonConfigMap = {};
+
+JsonConfig::JsonConfig(const QString &filePath) : logger(__FUNCTION__) {
+    open(filePath);
 }
 
-bool JsonConfig::open(const QString &filename) {
-    QMutexLocker lk(&mut);
-    QFile file(filename);
+bool JsonConfig::open(const QString &filePath) {
+    if (JsonConfigMap.contains(filePath)) {
+        *this = JsonConfigMap[filePath];
+        return true;
+    }
+    QFile file(filePath);
     if (!file.exists()) {
         return false;
     }
@@ -25,13 +28,14 @@ bool JsonConfig::open(const QString &filename) {
 
     if (!jsonDoc.isNull() && (jsonError.error == QJsonParseError::NoError)) {
         jsonDocument = jsonDoc;
-        Path = filename;
+        Path = QFileInfo(file).absolutePath();
+        JsonConfigMap.insert(filePath, *this);
+        opened = true;
         return true;
     } else return false;
 }
 
 QJsonValue JsonConfig::findObject(const QString &path) {
-    QMutexLocker lk(&mut);
     QStringList list = path.split('/');
     auto object = jsonDocument.object();
     for (const QString &node : list) {
@@ -43,10 +47,25 @@ QJsonValue JsonConfig::findObject(const QString &path) {
     return object;
 }
 
-bool JsonConfig::isOpen() {
-    return opened;
+int JsonConfig::findInt(const QString &path, int defaultValue, std::function<bool(int)> cmp) {
+    int val = findObject(path).toInt(defaultValue);
+    if (!cmp(val)) {
+        logger.error("'{}' missing or error", path.toStdString());
+        throw std::runtime_error("config error");
+    }
+    return val;
 }
 
-const QString &JsonConfig::getPath() const {
-    return Path;
+JsonConfig &JsonConfig::factory(const QString &filePath) {
+    if (!JsonConfigMap.contains(filePath)) {
+        return JsonConfigMap.insert(filePath, JsonConfig(filePath)).value();
+    }
+    return JsonConfigMap[filePath];
+}
+
+JsonConfig JsonConfig::operator=(const JsonConfig &jsonConfig) {
+    this->logger = jsonConfig.logger;
+    this->jsonDocument = jsonConfig.jsonDocument;
+    this->opened = jsonConfig.opened;
+    return *this;
 }

@@ -27,11 +27,6 @@ spdlogger::spdlogger(const std::string &name) {
     err_log = t.err_log;
 }
 
-spdlogger::~spdlogger() {
-    spdlog::drop(log->name());
-    spdlog::drop(err_log->name());
-}
-
 void spdlogger::enable_backtrace(size_t n_messages) {
     log->enable_backtrace(n_messages);
     err_log->enable_backtrace(n_messages);

@@ -47,11 +47,6 @@ public:
     spdlogger(const std::string &name);
 
     /**
-     * 析构，关闭记录器
-     */
-    ~spdlogger();
-
-    /**
      * 重载运算符= 赋值拷贝
      * @param logger 拷贝对象
      * @return 自身拷贝
