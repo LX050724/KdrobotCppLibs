@@ -10,7 +10,7 @@
 #include <QSerialPortInfo>
 #include "CRC.h"
 
-VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID) : logger(__FUNCTION__){
+VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID) : logger(__FUNCTION__) {
     pid = PID;
     vid = VID;
     thread_id = QThread::currentThreadId();
@@ -31,11 +31,10 @@ bool VCOMCOMM::auto_connect() {
                 this->close();
             } else logger.info("open port");
             this->setPort(info);
-            if (!this->open(ReadWrite)) {
+            if (this->open(ReadWrite) && (this->error() == SerialPortError::NoError))
+                return true;
+            else
                 logger.error("can't open port {}", info.portName().toStdString());
-                throw std::runtime_error("can't open port");
-            }
-            return true;
         }
     }
     return false;
@@ -52,7 +51,7 @@ void VCOMCOMM::portReadyRead() {
         if (len + 8 != data.size())
             return;
         uint16_t crc = *((uint16_t *) (pdata + 6 + len));
-        QByteArray array((const char *)(pdata + 6), len);
+        QByteArray array((const char *) (pdata + 6), len);
         uint16_t c = CRC::Verify_CRC16_Check_Sum(array);
         if (len == 0 || c == crc) {
             logger.debug("RX: fun=0x{:02X}, id=0x{:04X}, crc=0x{:04X}|0x{:04X}", fun, id, crc, c);
@@ -62,42 +61,9 @@ void VCOMCOMM::portReadyRead() {
 }
 
 void VCOMCOMM::portErrorOccurred(SerialPortError error) {
-    switch (error) {
-        case NoError:
-            break;
-        case ResourceError:
-            logger.error("ErrorOccurred ResourceError");
-            break;
-        case NotOpenError:
-            logger.error("ErrorOccurred NotOpenError");
-            break;
-        case DeviceNotFoundError:
-            logger.error("ErrorOccurred DeviceNotFoundError");
-            break;
-        case PermissionError:
-            logger.error("ErrorOccurred PermissionError");
-            break;
-        case OpenError:
-            logger.error("ErrorOccurred OpenError");
-            break;
-        case WriteError:
-            logger.error("ErrorOccurred WriteError");
-            break;
-        case ReadError:
-            logger.error("ErrorOccurred ReadError");
-            break;
-        case UnsupportedOperationError:
-            logger.error("ErrorOccurred UnsupportedOperationError");
-            break;
-        case UnknownError:
-            logger.error("ErrorOccurred UnknownError");
-            break;
-        case TimeoutError:
-            logger.error("ErrorOccurred TimeoutError");
-            break;
-        default:
-            logger.error("Unknow error: {}", error);
-            break;
+    if (error != NoError) {
+        QMetaEnum metaEnum = QMetaEnum::fromType<SerialPortError>();
+        logger.error("{}", metaEnum.valueToKey(error));
     }
 }
 
@@ -108,8 +74,8 @@ void VCOMCOMM::Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data) {
     }
 
     logger.debug("TX: fun=0x{:02X}, id=0x{:04X}", fun_code, id);
-    if (!this->isOpen() && !this->auto_connect()) {
-        logger.error("Transmit Error, Port is closed");
+    if (!(this->isOpen() && (this->error() == SerialPortError::NoError)) && !this->auto_connect()) {
+        logger.error("Transmit Error, Port is closed or error");
         return;
     }
     if (data.size() > 64 - 8) {
