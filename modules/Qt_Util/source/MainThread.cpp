@@ -41,7 +41,6 @@ MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(paren
         spdlogger::allLogger_logToFile(logFile.toStdString());
     }
     l.flush();
-    this->start();
 }
 
 void MainThread::run() {

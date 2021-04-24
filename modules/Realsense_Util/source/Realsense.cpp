@@ -18,7 +18,7 @@ void Realsense::run() {
     rs2::device selected_device;
     if (devices.size() == 0) {
         logger.error("No device connected, please connect a RealSense device");
-        ::exit(EXIT_SUCCESS);
+        throw std::runtime_error("No device connected, please connect a RealSense device");
     }
 
     /* 搜索传感器并读取配置文件配置传感器 */
@@ -38,7 +38,7 @@ void Realsense::run() {
                         sensor.set_option(option, optionCfg);
                     } catch (rs2::invalid_value_error e) {
                         logger.error("option error: '{}', {}", rs2_option_to_string(option), e.what());
-                        ::exit(EXIT_SUCCESS);
+                        throw e;
                     }
                 } else {
                     try {
