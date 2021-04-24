@@ -6,6 +6,8 @@
 
 #include "MainThread.h"
 
+using namespace spdlog::level;
+
 MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(parent), logger("main") {
     this->args = args;
     QCommandLineOption currentPath({"d", "directory"}, "Set the working directory", "currentPath");
@@ -25,7 +27,14 @@ MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(paren
 
     if (config.isOpen()) {
         l.info("open the config file'{}'", configFile);
-        auto confLog = config.findObject("log").toString();
+        auto confLog = config.findObject("logger/OutputFile").toString();
+
+        level_enum LogLevel = from_str(config.findObject("logger/LogLevel").toString().toStdString());
+        if (LogLevel < n_levels && LogLevel > 0) {
+            spdlog::set_level(LogLevel);
+            l.info("set log level '{}'", to_string_view(LogLevel));
+        } else l.error("'LogLevel' Parameter is invalid");
+
         if (logFile.isEmpty() && !confLog.isEmpty()) {
             logFile = confLog;
         }
