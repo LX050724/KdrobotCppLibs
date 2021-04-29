@@ -18,7 +18,7 @@
  * @return 两点间距离
  */
 template<typename T>
-auto inline distenceP2P(const cv::Point_<T> &a, const cv::Point_<T> &b) {
+float inline distenceP2P(const cv::Point_<T> &a, const cv::Point_<T> &b) {
     return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
 }
 
@@ -31,7 +31,7 @@ auto inline distenceP2P(const cv::Point_<T> &a, const cv::Point_<T> &b) {
  * @return 点到线距离
  */
 template<typename T>
-auto inline distenceP2L(const cv::Point_<T> &p, const cv::Point_<T> &a, const cv::Point_<T> &b) {
+float inline distenceP2L(const cv::Point_<T> &p, const cv::Point_<T> &a, const cv::Point_<T> &b) {
     float l = (b.y - a.y) / (b.x - a.x);
     return fabs(l * p.x - p.y + a.y - l * a.x) / sqrt(l * l + 1);
 }
@@ -44,7 +44,7 @@ auto inline distenceP2L(const cv::Point_<T> &p, const cv::Point_<T> &a, const cv
  * @return 线角度
  */
 template<typename T>
-auto inline lineAngle(const cv::Point_<T> &a, const cv::Point_<T> &b) {
+float inline lineAngle(const cv::Point_<T> &a, const cv::Point_<T> &b) {
     cv::Point_<T> l = b - a;
     return std::atan2(l.y, l.x) * 360 / CV_2PI;
 }
