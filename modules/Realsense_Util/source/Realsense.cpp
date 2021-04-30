@@ -7,7 +7,6 @@
 #include <opencv2/opencv.hpp>
 #include "Realsense.h"
 #include <QFuture>
-#include <QtConcurrent/QtConcurrentRun>
 
 void Realsense::run() {
     logger.info("Realseson Thread Started");
@@ -95,6 +94,10 @@ void Realsense::run() {
     }
 }
 
+bool Realsense::waitReady(int time_out) {
+    return ready.tryLock(time_out);
+}
+
 const RealsenseFrame &Realsense::getFrame() {
     /* Mat缓冲区就绪锁，从缓冲区读取图像之后上锁，新图像到达时解锁 */
     ready.lock();
@@ -159,7 +162,6 @@ cv::Point3f Realsense::deproject_pixel_to_point(const rs2_intrinsics &intrin, co
     }
     return {depth * x, depth * y, depth};
 }
-
 
 std::string Realsense::get_device_name(const rs2::device &dev) {
     // Each device provides some information on itself, such as name:

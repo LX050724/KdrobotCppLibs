@@ -55,10 +55,7 @@ public:
     /**
      * 析构函数
      */
-    ~RCS_Client() {
-        if (pTcpConnect != nullptr)
-            pTcpConnect->deleteLater();
-    }
+    ~RCS_Client();
 
     /**
      * 注册GET请求和PUSH请求回调

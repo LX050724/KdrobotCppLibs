@@ -68,10 +68,7 @@ RCS_Client::RCS_Client(const QString &_ClientName, const QHostAddress &addr, uin
         Connected = true;
         waitCondition.wakeAll();
         waitMutex.unlock();
-    } else {
-        logger.error("Tcp Connect Time Out");
-        throw std::runtime_error("Tcp Connect Time Out");
-    }
+    } else logger.error("Tcp Connect Time Out");
     blockMutex.lock();
 }
 
@@ -111,7 +108,8 @@ void RCS_Client::UdpReadyRead() {
                                 SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
                                 this, SLOT(receive_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
-                        connect(pTcpConnect, SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
+                        connect(pTcpConnect,
+                                SIGNAL(Receive_BROADCAST(const QString &, const QString &, const QJsonObject &)),
                                 this, SIGNAL(signal_BROADCAST(const QString &, const QString &, const QJsonObject &)));
 
                         connect(pTcpConnect,
@@ -223,4 +221,9 @@ QJsonObject RCS_Client::GET_Block(const QString &target, const QString &var, boo
         return blockVal;
     }
     return {};
+}
+
+RCS_Client::~RCS_Client() {
+    if (pTcpConnect != nullptr)
+        pTcpConnect->deleteLater();
 }

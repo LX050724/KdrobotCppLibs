@@ -37,6 +37,8 @@ public:
 
     const RealsenseFrame &getFrame();
 
+    bool waitReady(int time_out = 0);
+
     //TODO 后期可能会修改
     static cv::Point3f deproject_pixel_to_point(const rs2_intrinsics &intrin, const cv::Point2f &pixel, float depth);
 
