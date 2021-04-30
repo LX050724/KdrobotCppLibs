@@ -24,7 +24,7 @@ public:
      * @param PID 产品ID
      * @param VID 制造商ID
      */
-    VCOMCOMM(uint16_t PID = 22336, uint16_t VID = 1155);
+    VCOMCOMM(uint16_t PID = 22336, uint16_t VID = 1155, QObject *parent = nullptr);
 
 
     /**

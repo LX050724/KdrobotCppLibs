@@ -10,7 +10,7 @@
 #include <QSerialPortInfo>
 #include "CRC.h"
 
-VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID) : logger(__FUNCTION__) {
+VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID, QObject *parent) : QSerialPort(parent),  logger(__FUNCTION__) {
     pid = PID;
     vid = VID;
     thread_id = QThread::currentThreadId();
