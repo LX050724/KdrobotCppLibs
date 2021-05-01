@@ -10,7 +10,7 @@
 #include <QSerialPortInfo>
 #include "CRC.h"
 
-VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID, QObject *parent) : QSerialPort(parent),  logger(__FUNCTION__) {
+VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID, QObject *parent) : QSerialPort(parent), logger(__FUNCTION__) {
     pid = PID;
     vid = VID;
     thread_id = QThread::currentThreadId();
@@ -25,7 +25,8 @@ bool VCOMCOMM::auto_connect() {
     for (const QSerialPortInfo &info : QSerialPortInfo::availablePorts()) {
         if (info.hasVendorIdentifier() && info.hasProductIdentifier() &&
             info.vendorIdentifier() == vid && info.productIdentifier() == pid) {
-            logger.info("find VCOMCOMM Driver, Port {}", info.portName().toStdString());
+            logger.info("find VCOMCOMM Driver, Port:'{}', Manufacturer:'{}'",
+                        info.portName(), info.manufacturer());
             if (this->isOpen()) {
                 logger.info("close port and reopen");
                 this->close();
@@ -33,8 +34,7 @@ bool VCOMCOMM::auto_connect() {
             this->setPort(info);
             if (this->open(ReadWrite) && (this->error() == SerialPortError::NoError))
                 return true;
-            else
-                logger.error("can't open port {}", info.portName().toStdString());
+            else logger.error("can't open port {}", info.portName());
         }
     }
     return false;
@@ -74,7 +74,11 @@ void VCOMCOMM::Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data) {
     }
 
     logger.debug("TX: fun=0x{:02X}, id=0x{:04X}", fun_code, id);
-    if (!(this->isOpen() && (this->error() == SerialPortError::NoError)) && !this->auto_connect()) {
+    /* 忽略读写错误 */
+    SerialPortError port_err = this->error();
+    if (port_err == ReadError || port_err == WriteError)
+        port_err = NoError;
+    if (!(this->isOpen() && port_err == NoError) && !this->auto_connect()) {
         logger.error("Transmit Error, Port is closed or error");
         return;
     }
