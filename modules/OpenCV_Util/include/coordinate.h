@@ -24,13 +24,13 @@ class Rect_COORD;
  * 球坐标系类
  * 面同镜头方向，上为z轴正方向，前为x轴正方向，左为y轴正方向
  */
-class Sphe_COORD : public cv::Point3_<double> {
+class Sphe_COORD : public cv::Point3f {
 public:
-    double &r = x;      //!<@brief 径向距离别名
-    double &theta = y;  //!<@brief 仰角、极角别名
-    double &phi = z;    //!<@brief 方位角别名
+    float &r = x;      //!<@brief 径向距离别名
+    float &theta = y;  //!<@brief 仰角、极角别名
+    float &phi = z;    //!<@brief 方位角别名
 
-    using cv::Point3_<double>::Point3_;
+    using cv::Point3f::Point3f;
 
     /**
     * @brief  重载构造函数
@@ -38,7 +38,7 @@ public:
     * @param  初始化theta
     * @param  初始化phi
     */
-    Sphe_COORD(double _r, double _theta, double _phi);
+    Sphe_COORD(float _r, float _theta, float _phi);
 
     Sphe_COORD operator=(const Rect_COORD &R2S);
 
@@ -51,13 +51,13 @@ public:
     }
 };
 
-/*
+/**
  * 空间直角坐标系类
  * 以画面坐标系为准，面同镜头方向，下位y轴正方向，右为x轴正方向，前为z轴正方向
  */
-class Rect_COORD : public cv::Point3_<double> {
+class Rect_COORD : public cv::Point3f {
 public:
-    using cv::Point3_<double>::Point3_;
+    using cv::Point3f::Point3f;
 
     /**
     * @brief  求两点距离静态函数
@@ -65,9 +65,9 @@ public:
     * @param  B点
     * @retval 距离
     */
-    static double distence(const Rect_COORD &A, const Rect_COORD &B);
+    static float distence(const Rect_COORD &A, const Rect_COORD &B);
 
-    double distence(const Rect_COORD &A);
+    float distence(const Rect_COORD &A);
 
     /**
     * @brief  重载运算符= 坐标系换算，球坐标系到空间直角坐标系
@@ -90,9 +90,9 @@ public:
  */
 class EulerAngle {
 public:
-    double Pitch;
-    double Yaw;
-    double Roll;
+    float Pitch;
+    float Yaw;
+    float Roll;
 
     /**
     * @brief  默认构造函数
@@ -105,7 +105,7 @@ public:
     * @param  初始化Yaw
     * @param  初始化Roll
     */
-    EulerAngle(double _Pitch, double _Yaw, double _Roll);
+    EulerAngle(float _Pitch, float _Yaw, float _Roll);
 
     /**
     * @brief  拷贝构造函数
@@ -148,12 +148,13 @@ public:
 class SpatialLocation : public EulerAngle, public Rect_COORD {
 public:
     SpatialLocation() = default;
+
     SpatialLocation(const SpatialLocation &Copy) = default;
 
     /**
     * @brief  使用继承的重载构造函数
     */
-    SpatialLocation(double _x, double _y, double _z, double _Pitch, double _Yaw, double _Roll) :
+    SpatialLocation(float _x, float _y, float _z, float _Pitch, float _Yaw, float _Roll) :
             EulerAngle(_Pitch, _Yaw, _Roll), Rect_COORD(_x, _y, _z) {}
 
     /**

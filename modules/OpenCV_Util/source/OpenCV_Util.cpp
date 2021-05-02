@@ -15,6 +15,27 @@ void drawRotatedRect(cv::InputOutputArray Img, cv::RotatedRect rect,
         cv::line(Img, points[k], points[(k + 1) % 4], color, thickness, lineType, shift);
 }
 
+cv::Point3f Rotation3D_X(const cv::Point3f &point, float x) {
+    float sin_x = sin(x), cos_x = cos(x);
+    return {point.x,
+            point.y * cos_x + point.z * sin_x,
+            point.y * -sin_x + point.z * cos_x};
+}
+
+cv::Point3f Rotation3D_Y(const cv::Point3f &point, float y) {
+    float sin_y = sin(y), cos_y = cos(y);
+    return {point.x * cos_y + point.z * -sin_y,
+            point.y,
+            point.x * sin_y + point.z * cos_y};
+}
+
+cv::Point3f Rotation3D_Z(const cv::Point3f &point, float z) {
+    float sin_z = sin(z), cos_z = cos(z);
+    return {point.x * cos_z + point.y * sin_z,
+            point.x * -sin_z + point.y * cos_z,
+            point.z};
+}
+
 void HChannleOffsetInRange(const cv::Mat &Input, int offset, const cv::Scalar &lowerb,
                            const cv::Scalar &upperb, cv::Mat &dst) {
     int nr = Input.rows;
@@ -41,4 +62,28 @@ void HChannleOffsetInRange(const cv::Mat &Input, int offset, const cv::Scalar &l
                               V_Lower <= V && V <= V_Upper) ? 0xff : 0x00;
         }
     }
+}
+
+cv::Point3f Rotation3D(const cv::Point3f &point, const char *order, float v1, float v2, float v3) {
+    cv::Point3f p = point;
+    float a[] = {v1, v2, v3};
+    for (int i = 0; i < 3 && order[i] != 0; i++) {
+        switch (order[i]) {
+            case 'x':
+            case 'X':
+                p = Rotation3D_X(p, a[i]);
+                break;
+            case 'y':
+            case 'Y':
+                p = Rotation3D_Y(p, a[i]);
+                break;
+            case 'z':
+            case 'Z':
+                p = Rotation3D_Z(p, a[i]);
+                break;
+            default:
+                throw std::invalid_argument("顺序字符串错误");
+        }
+    }
+    return p;
 }

@@ -7,7 +7,7 @@
 #include "coordinate.h"
 #include <math.h>
 
-Sphe_COORD::Sphe_COORD(double _r, double _theta, double _phi) {
+Sphe_COORD::Sphe_COORD(float _r, float _theta, float _phi) {
     r = _r;
     theta = _theta;
     phi = _phi;
@@ -21,7 +21,7 @@ Sphe_COORD Sphe_COORD::operator=(const Rect_COORD &R2S) {
     return *this;
 }
 
-double Rect_COORD::distence(const Rect_COORD &A, const Rect_COORD &B) {
+float Rect_COORD::distence(const Rect_COORD &A, const Rect_COORD &B) {
     return sqrt(pow(A.x - B.x, 2) + pow(A.y - B.y, 2) + pow(A.z - B.z, 2));
 }
 
@@ -44,11 +44,11 @@ Rect_COORD Rect_COORD::operator=(const Sphe_COORD &S2R) {
     return *this;
 }
 
-double Rect_COORD::distence(const Rect_COORD &A) {
+float Rect_COORD::distence(const Rect_COORD &A) {
     return distence(*this, A);
 }
 
-EulerAngle::EulerAngle(double _Pitch, double _Yaw, double _Roll) {
+EulerAngle::EulerAngle(float _Pitch, float _Yaw, float _Roll) {
     Pitch = _Pitch;
     Yaw = _Yaw;
     Roll = _Roll;
