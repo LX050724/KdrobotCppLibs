@@ -17,7 +17,10 @@ Sphe_COORD Sphe_COORD::operator=(const Rect_COORD &R2S) {
     Rect_COORD Temp(R2S.z, -R2S.x, -R2S.y);
     this->r = sqrt(pow(Temp.x, 2) + pow(Temp.y, 2) + pow(Temp.z, 2));
     this->theta = atan(sqrt(pow(Temp.x, 2) + pow(Temp.y, 2)) / Temp.z);
-    this->phi = atan(Temp.y / Temp.x);
+    float atan_xy = atan(Temp.y / Temp.x);
+    if (Temp.x < 0)
+        atan_xy += CV_PI;
+    this->phi = atan_xy;
     return *this;
 }
 

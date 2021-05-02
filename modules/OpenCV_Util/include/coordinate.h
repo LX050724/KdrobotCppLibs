@@ -45,8 +45,8 @@ public:
     /**
      * @brief 重载输出流运算符模板
      */
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const Sphe_COORD &out) {
+    template<class _Traits>
+    friend inline std::basic_ostream<char, _Traits> &operator<<(std::basic_ostream<char, _Traits> &os, const Sphe_COORD &out) {
         return os << "[Sphe(tPr):" << out.theta << ',' << out.phi << ',' << out.r << ']';
     }
 };
@@ -79,8 +79,8 @@ public:
     /**
      * @brief 重载输出流运算符模板
      */
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const Rect_COORD &out) {
+    template<class _Traits>
+    friend inline std::basic_ostream<char, _Traits> &operator<<(std::basic_ostream<char, _Traits> &os, const Rect_COORD &out) {
         return os << "[Rect(XYZ):" << out.x << ',' << out.y << ',' << out.z << ']';
     }
 };
@@ -136,8 +136,8 @@ public:
     /**
      * @brief 重载输出流运算符模板
      */
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const EulerAngle &out) {
+    template<class _Traits>
+    friend inline std::basic_ostream<char, _Traits> &operator<<(std::basic_ostream<char, _Traits> &os, const EulerAngle &out) {
         return os << "[Eural(YPR):" << out.Yaw << ',' << out.Pitch << ',' << out.Roll << ']';
     }
 };
@@ -175,8 +175,8 @@ public:
     /**
      * @brief 重载输出流运算符模板
      */
-    template<typename OStream>
-    friend OStream &operator<<(OStream &os, const SpatialLocation &location) {
+    template<class _Traits>
+    friend inline std::basic_ostream<char, _Traits> &operator<<(std::basic_ostream<char, _Traits> &os, const SpatialLocation &location) {
         os << '[' << static_cast<const EulerAngle &>(location) << ' '
            << static_cast<const Rect_COORD &>(location) << ']';
         return os;
