@@ -17,7 +17,7 @@ class RealsenseFrame {
     cv::Size ColorImageSize, DepthImageSize;
     cv::Mat ColorImage, DepthImage;
     uint64_t frame_number;
-    double timestamp;
+    double timestamp; //!<@brief 毫秒单位的时间戳
 
     RealsenseFrame(const rs2::frameset &frameset);
 

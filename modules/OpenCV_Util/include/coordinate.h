@@ -12,9 +12,8 @@
 #include <iostream>
 #include "spdlog/fmt/ostr.h"
 
-/*角度制，弧度制换算宏定义函数*/
-#define Deg2Ran(_Deg_) ((_Deg_) * CS_2PI / 360)
-#define Ran2Deg(_Ran_) ((_Ran_) / CS_2PI * 360)
+#define Deg2Ran(_Deg_) ((_Deg_) * CV_2PI / 360)  //!<@brief 角度转弧度
+#define Ran2Deg(_Ran_) ((_Ran_) / CV_2PI * 360)  //!<@brief 弧度转角度
 
 class EulerAngle;
 
