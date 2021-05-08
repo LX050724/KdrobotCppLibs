@@ -11,6 +11,7 @@
  * @class BackTrace
  * @brief 堆栈回溯
  * @details 在全局定义一个对象即可
+ * @warning 只在Linux中提供
  * @warning 如果使用了{@link MainThread}请勿自行定义对象
  * @bug 目前无法准确捕捉由SIGABRT信号发出的QThread内的异常堆栈，SIGSEGV信号可以捕捉
  * @test 尚不保证没有其他问题

@@ -10,10 +10,18 @@
 #include <QSerialPort>
 #include <spdlogger.h>
 
+/**
+ * @brief 虚拟串口
+ * @details 可基于PID和VID或制造商名称自动搜索串口
+ *          使用VCOMCOMM协议进行通信
+ *          基于信号量可跨线程通信
+ * @class VCOMCOMM
+ */
 class VCOMCOMM : public QSerialPort {
 Q_OBJECT
 private:
     uint16_t pid, vid;
+    QString manufacturer;
     Qt::HANDLE thread_id;
     spdlogger logger;
 
@@ -26,18 +34,41 @@ public:
      */
     VCOMCOMM(uint16_t PID = 22336, uint16_t VID = 1155, QObject *parent = nullptr);
 
+    /**
+     * @brief 构造函数,构造时自动搜索对应制造商名称的USB串口设备
+     * @param manufacturer 制造商名称
+     */
+    VCOMCOMM(const QString &manufacturer, QObject *parent = nullptr);
+
 
     /**
-     * @brief 自动连接对应PID和VID的USB串口设备
+     * @brief 自动连接对应制造商名称或PID和VID的USB串口设备
+     *        优先搜索制造商名称
      * @return 自动连接是否成功
      */
     bool auto_connect();
 
+    /**
+     * @brief 设置PID和VID
+     * @param PID 产品ID
+     * @param VID 制造商ID
+     */
+    void setPidVid(uint16_t PID, uint16_t VID);
+
+    /**
+     * @brief 设置制造商名称
+     * @param manufacturer 制造商名称
+     */
+    void setManufacturer(const QString &manufacturer);
+
 protected slots:
+
     void portReadyRead();
+
     void portErrorOccurred(QSerialPort::SerialPortError error);
 
 public slots:
+
     /**
      * @brief 发送消息
      * @param fun_code 功能码
@@ -47,6 +78,7 @@ public slots:
     void Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data);
 
 signals:
+
     /**
      * @brief 收到数据包信号量
      * @param fun_code 数据包功能码

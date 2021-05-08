@@ -12,14 +12,42 @@ find_package(spdlog)
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 
 if (spdlog_FOUND AND Qt${QT_VERSION}Core_FOUND)
-    add_library(${PROJECT_NAME} source/spdlogger.cpp source/BackTrace.cpp source/spdUtil.cpp include/spdlogger.h include/BackTrace.h include/QtCompatibilityLayer.h include/spdUtil.h)
+
+    if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+        message(STATUS "in Linux, BackTrace is Enable")
+
+        add_library(${PROJECT_NAME}
+                source/spdlogger.cpp
+                source/BackTrace.cpp
+                source/spdUtil.cpp
+                include/spdlogger.h
+                include/BackTrace.h
+                include/QtCompatibilityLayer.h
+                include/spdUtil.h)
+
+        set(MY_PUBLIC_HEADERS
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlogger.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/QtCompatibilityLayer.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/spdUtil.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/BackTrace.h")
+    else ()
+        message(STATUS "not in Linux, BackTrace is Disable")
+
+        add_library(${PROJECT_NAME}
+                source/spdlogger.cpp
+                source/spdUtil.cpp
+                include/spdlogger.h
+                include/QtCompatibilityLayer.h
+                include/spdUtil.h)
+
+        set(MY_PUBLIC_HEADERS
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlogger.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/QtCompatibilityLayer.h"
+                "${CMAKE_CURRENT_SOURCE_DIR}/include/spdUtil.h")
+    endif ()
+
     target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog ${REQUIRED_LIBS_QUALIFIED})
 
-    set(MY_PUBLIC_HEADERS
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlogger.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/QtCompatibilityLayer.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/spdUtil.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/BackTrace.h")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${MY_PUBLIC_HEADERS}")
 

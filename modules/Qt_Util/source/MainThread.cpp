@@ -8,7 +8,9 @@
 
 using namespace spdlog::level;
 
+#ifdef linux
 BackTrace MainThread::backTrace = BackTrace();
+#endif
 
 MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(parent), logger("main") {
     this->args = args;

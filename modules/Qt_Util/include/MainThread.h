@@ -46,8 +46,9 @@
  */
 class MainThread : public QThread {
 Q_OBJECT
+#ifdef linux
     static BackTrace backTrace;    ///<@brief 堆栈回溯
-
+#endif
 protected:
     spdlogger logger;       ///<@brief 日志器
     JsonConfig config;      ///<@brief json配置

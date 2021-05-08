@@ -18,24 +18,43 @@ VCOMCOMM::VCOMCOMM(uint16_t PID, uint16_t VID, QObject *parent) : QSerialPort(pa
     connect(this, &QSerialPort::errorOccurred, this, &VCOMCOMM::portErrorOccurred);
     connect(this, &VCOMCOMM::CrossThreadTransmitSignal, this, &VCOMCOMM::Transmit, Qt::QueuedConnection);
     if (!auto_connect())
-        logger.warn("not find VCOMCOMM Driver");
+        logger.warn("not find VCOMCOMM Device");
+}
+
+VCOMCOMM::VCOMCOMM(const QString &manufacturer, QObject *parent)
+        : QSerialPort(parent), logger(__FUNCTION__), manufacturer(manufacturer) {
+    pid = vid = 0;
+    thread_id = QThread::currentThreadId();
+    connect(this, &QSerialPort::readyRead, this, &VCOMCOMM::portReadyRead);
+    connect(this, &QSerialPort::errorOccurred, this, &VCOMCOMM::portErrorOccurred);
+    connect(this, &VCOMCOMM::CrossThreadTransmitSignal, this, &VCOMCOMM::Transmit, Qt::QueuedConnection);
+    if (!auto_connect())
+        logger.warn("not find VCOMCOMM Device");
 }
 
 bool VCOMCOMM::auto_connect() {
+    QSerialPortInfo selected_port;
     for (const QSerialPortInfo &info : QSerialPortInfo::availablePorts()) {
-        if (info.hasVendorIdentifier() && info.hasProductIdentifier() &&
-            info.vendorIdentifier() == vid && info.productIdentifier() == pid) {
-            logger.info("find VCOMCOMM Driver, Port:'{}', Manufacturer:'{}'",
-                        info.portName(), info.manufacturer());
-            if (this->isOpen()) {
-                logger.info("close port and reopen");
-                this->close();
-            } else logger.info("open port");
-            this->setPort(info);
-            if (this->open(ReadWrite) && (this->error() == SerialPortError::NoError))
-                return true;
-            else logger.error("can't open port {}", info.portName());
+        if (manufacturer.isEmpty()) {
+            if (info.hasVendorIdentifier() && info.hasProductIdentifier() &&
+                info.vendorIdentifier() == vid && info.productIdentifier() == pid) {
+                selected_port = info;
+            }
+        } else if (info.manufacturer() == manufacturer) {
+            selected_port = info;
         }
+    }
+    if (!selected_port.isNull()) {
+        logger.info("find VCOMCOMM Driver, Port:'{}', Manufacturer:'{}'",
+                    selected_port.portName(), selected_port.manufacturer());
+        if (this->isOpen()) {
+            logger.info("close port and reopen");
+            this->close();
+        } else logger.info("open port");
+        this->setPort(selected_port);
+        if (this->open(ReadWrite) && (this->error() == SerialPortError::NoError))
+            return true;
+        else logger.error("can't open port {}", selected_port.portName());
     }
     return false;
 }
@@ -95,4 +114,13 @@ void VCOMCOMM::Transmit(uint8_t fun_code, uint16_t id, const QByteArray &data) {
     this->writeData((const char *) buff, len + 8);
     this->waitForBytesWritten(100);
     this->clear(Output);
+}
+
+void VCOMCOMM::setPidVid(uint16_t PID, uint16_t VID) {
+    pid = PID;
+    vid = VID;
+}
+
+void VCOMCOMM::setManufacturer(const QString &manufacturer) {
+    VCOMCOMM::manufacturer = manufacturer;
 }
