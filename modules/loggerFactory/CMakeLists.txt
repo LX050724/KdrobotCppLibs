@@ -12,13 +12,14 @@ find_package(spdlog)
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 
 if (spdlog_FOUND AND Qt${QT_VERSION}Core_FOUND)
-    add_library(${PROJECT_NAME} source/spdlogger.cpp source/spdUtil.cpp include/spdlogger.h include/QtCompatibilityLayer.h include/spdUtil.h)
+    add_library(${PROJECT_NAME} source/spdlogger.cpp source/BackTrace.cpp source/spdUtil.cpp include/spdlogger.h include/BackTrace.h include/QtCompatibilityLayer.h include/spdUtil.h)
     target_link_libraries(${PROJECT_NAME} PUBLIC spdlog::spdlog ${REQUIRED_LIBS_QUALIFIED})
 
     set(MY_PUBLIC_HEADERS
             "${CMAKE_CURRENT_SOURCE_DIR}/include/spdlogger.h"
             "${CMAKE_CURRENT_SOURCE_DIR}/include/QtCompatibilityLayer.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/include/spdUtil.h")
+            "${CMAKE_CURRENT_SOURCE_DIR}/include/spdUtil.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/include/BackTrace.h")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${MY_PUBLIC_HEADERS}")
 

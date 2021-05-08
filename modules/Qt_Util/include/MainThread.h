@@ -10,7 +10,8 @@
 #include <QObject>
 #include <QThread>
 #include <spdlogger.h>
-#include "JsonConfig.h"
+#include <JsonConfig.h>
+#include <BackTrace.h>
 
 /**
  * @class MainThread
@@ -41,9 +42,12 @@
  *      }}
  * main方法运行于一个新的线程内，此时Qt框架已经启动
  * @warning 注意带有Qt信号量的对象应在主线程内构造，防止消息循环被阻塞
+ * @warning 内置堆栈回溯功能，不需要再次定义{@link BackTrace}
  */
 class MainThread : public QThread {
 Q_OBJECT
+    static BackTrace backTrace;    ///<@brief 堆栈回溯
+
 protected:
     spdlogger logger;       ///<@brief 日志器
     JsonConfig config;      ///<@brief json配置

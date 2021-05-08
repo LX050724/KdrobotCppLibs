@@ -8,6 +8,8 @@
 
 using namespace spdlog::level;
 
+BackTrace MainThread::backTrace = BackTrace();
+
 MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(parent), logger("main") {
     this->args = args;
     QCommandLineOption currentPath({"d", "directory"}, "Set the working directory", "currentPath");
