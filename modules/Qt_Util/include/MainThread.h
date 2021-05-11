@@ -11,7 +11,10 @@
 #include <QThread>
 #include <spdlogger.h>
 #include <JsonConfig.h>
+
+#ifdef linux
 #include <BackTrace.h>
+#endif
 
 /**
  * @class MainThread

@@ -33,14 +33,23 @@ MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(paren
         l.info("open the config file'{}'", configFile);
         auto confLog = config.findObject("logger/OutputFile").toString();
 
-        level_enum LogLevel = from_str(config.findObject("logger/LogLevel").toString().toStdString());
-        if (LogLevel < n_levels && LogLevel > 0) {
-            spdlog::set_level(LogLevel);
-            l.info("set log level '{}'", to_string_view(LogLevel));
-        } else l.error("'LogLevel' Parameter is invalid");
+        QJsonValue LogLevelObj = config.findObject("logger/LogLevel");
+        if (!LogLevelObj.isNull()) {
+            level_enum LogLevel = from_str(LogLevelObj.toString().toStdString());
+            if (LogLevel < n_levels && LogLevel > 0) {
+                l.info("set log level '{}'", to_string_view(LogLevel));
+                spdlog::set_level(LogLevel);
+            } else l.error("'LogLevel' Parameter is invalid");
+        }
 
         if (logFile.isEmpty() && !confLog.isEmpty()) {
             logFile = confLog;
+        }
+
+        QJsonValue patternObj = config.findObject("logger/Pattern");
+        if (!patternObj.isNull()) {
+            spdlog::set_pattern(patternObj.toString().toStdString());
+            l.info("set log pattern '{}'", patternObj.toString());
         }
     } else l.warn("can't open the config file'{}'", configFile);
 

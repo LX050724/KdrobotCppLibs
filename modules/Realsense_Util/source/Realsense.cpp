@@ -6,7 +6,6 @@
 
 #include <opencv2/opencv.hpp>
 #include "Realsense.h"
-#include <QFuture>
 
 void Realsense::run() {
     logger.info("Realseson Thread Started");
@@ -77,7 +76,7 @@ void Realsense::run() {
 
     while (running) {
         try {
-            if (alignEnable) frames = align.process(p.wait_for_frames());
+            if (alignEnable) frames = align.process(p.wait_for_frames(1000));
             else frames = p.wait_for_frames();
         } catch (rs2::error e) {
             logger.error("in function '{}', {}", e.get_failed_function(), e.what());

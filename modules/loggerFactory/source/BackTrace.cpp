@@ -1,12 +1,13 @@
-//
-// Created by yao on 2021/5/7.
-//
+/**
+ * @file BackTrace.cpp
+ * @date 2021年05月11日
+ * @anchor yao
+ */
 
 #include "BackTrace.h"
 #include <execinfo.h>
 #include <csignal>
 #include <unistd.h>
-void (*signal(int signum, void (*handler)(int)))(int);
 
 std::shared_ptr<spdlog::logger> BackTrace::log = spdlog::stderr_color_mt("BackTrace");
 
@@ -22,10 +23,15 @@ BackTrace::BackTrace() {
 
 void BackTrace::signal_exit(int sig) {
     const char *sig_str = signalString(sig);
-    log->error("{} PID={} ThreadID={}", sig_str, getpid(), QThread::currentThreadId());
+    log->error("{} PID={} ThreadID={} ClassName={}", sig_str, getpid(), QThread::currentThreadId(),
+               QThread::currentThread()->metaObject()->className());
     if (sig == SIGABRT || sig == SIGSEGV)
         print_stack(sig_str);
-    ::exit(sig + 128);
+    spdlog::apply_all([=](const std::shared_ptr<spdlog::logger> &logger) {
+        logger->flush();
+    });
+    spdlog::shutdown();
+    ::exit(sig | 0x80);
 }
 
 void BackTrace::print_stack(const char *sig) {
@@ -44,9 +50,6 @@ void BackTrace::print_stack(const char *sig) {
         }
         free(strings);
     }
-    spdlog::apply_all([=](const std::shared_ptr<spdlog::logger> &logger) {
-        logger->flush();
-    });
 }
 
 bool BackTrace::get_AddrLine(const char *addr, char *buff) {
