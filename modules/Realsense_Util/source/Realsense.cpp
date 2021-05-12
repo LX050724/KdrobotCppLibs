@@ -5,6 +5,7 @@
  */
 
 #include <opencv2/opencv.hpp>
+#include <librealsense2/rsutil.h>
 #include "Realsense.h"
 
 void Realsense::run() {
@@ -114,52 +115,9 @@ const RealsenseFrame &Realsense::getFrame() {
  * @return 三维坐标
  */
 cv::Point3f Realsense::deproject_pixel_to_point(const rs2_intrinsics &intrin, const cv::Point2f &pixel, float depth) {
-    assert(intrin.model != RS2_DISTORTION_MODIFIED_BROWN_CONRADY); // Cannot deproject from a forward-distorted image
-    //assert(intrin.model != RS2_DISTORTION_BROWN_CONRADY); // Cannot deproject to an brown conrady model
-
-    float x = (pixel.x - intrin.ppx) / intrin.fx;
-    float y = (pixel.y - intrin.ppy) / intrin.fy;
-    if (intrin.model == RS2_DISTORTION_INVERSE_BROWN_CONRADY) {
-        float r2 = x * x + y * y;
-        float f = 1 + intrin.coeffs[0] * r2 + intrin.coeffs[1] * r2 * r2 + intrin.coeffs[4] * r2 * r2 * r2;
-        float ux = x * f + 2 * intrin.coeffs[2] * x * y + intrin.coeffs[3] * (r2 + 2 * x * x);
-        float uy = y * f + 2 * intrin.coeffs[3] * x * y + intrin.coeffs[2] * (r2 + 2 * y * y);
-        x = ux;
-        y = uy;
-    }
-    if (intrin.model == RS2_DISTORTION_KANNALA_BRANDT4) {
-        float rd = sqrtf(x * x + y * y);
-        if (rd < FLT_EPSILON) {
-            rd = FLT_EPSILON;
-        }
-
-        float theta = rd;
-        float theta2 = rd * rd;
-        for (int i = 0; i < 4; i++) {
-            float f = intrin.coeffs[1] + theta2 * (intrin.coeffs[2] + theta2 * intrin.coeffs[3]);
-            f = theta * (1 + theta2 * (intrin.coeffs[0] + theta2 * f)) - rd;
-            if (fabs(f) < FLT_EPSILON) {
-                break;
-            }
-            float df = theta2 * (7 * intrin.coeffs[2] + 9 * theta2 * intrin.coeffs[3]);
-            df = 1 + theta2 * (3 * intrin.coeffs[0] + theta2 * (5 * intrin.coeffs[1] + df));
-            theta -= f / df;
-            theta2 = theta * theta;
-        }
-        float r = tan(theta);
-        x *= r / rd;
-        y *= r / rd;
-    }
-    if (intrin.model == RS2_DISTORTION_FTHETA) {
-        float rd = sqrtf(x * x + y * y);
-        if (rd < FLT_EPSILON) {
-            rd = FLT_EPSILON;
-        }
-        float r = (float) (tan(intrin.coeffs[0] * rd) / atan(2 * tan(intrin.coeffs[0] / 2.0f)));
-        x *= r / rd;
-        y *= r / rd;
-    }
-    return {depth * x, depth * y, depth};
+    float p3d[3], p2d[2] = {pixel.x, pixel.y};
+    rs2_deproject_pixel_to_point(p3d, &intrin, p2d, depth);
+    return {p3d[0], p3d[1], p3d[2]};
 }
 
 std::string Realsense::get_device_name(const rs2::device &dev) {

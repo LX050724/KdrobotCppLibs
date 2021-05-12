@@ -39,8 +39,15 @@ public:
 
     bool waitReady(int time_out = 0);
 
-    //TODO 后期可能会修改
     static cv::Point3f deproject_pixel_to_point(const rs2_intrinsics &intrin, const cv::Point2f &pixel, float depth);
+
+    inline cv::Point3f ColorPixel_to_point(const cv::Point2f &pixel, float depth) const {
+        return deproject_pixel_to_point(color_intrinsics, pixel, depth);
+    }
+
+    inline cv::Point3f DepthPixel_to_point(const cv::Point2f &pixel, float depth) const {
+        return deproject_pixel_to_point(depth_intrinsics, pixel, depth);
+    }
 
     inline const rs2_intrinsics &getDepthIntrinsics() const {
         return depth_intrinsics;
