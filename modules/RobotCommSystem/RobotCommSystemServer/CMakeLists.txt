@@ -10,12 +10,12 @@ set(QT_VERSION 5)
 set(REQUIRED_LIBS Core Network)
 set(REQUIRED_LIBS_QUALIFIED Qt5::Core Qt5::Network)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp main.h)
 
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 find_package(spdlog)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${REQUIRED_LIBS_QUALIFIED} spdlog::spdlog RobotCommSystem loggerFactory)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${REQUIRED_LIBS_QUALIFIED} spdlog::spdlog RobotCommSystem loggerFactory Qt_Util)
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     target_compile_definitions(${PROJECT_NAME} PUBLIC -D__DEBUG__)
