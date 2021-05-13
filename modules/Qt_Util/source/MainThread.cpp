@@ -20,7 +20,7 @@ MainThread::MainThread(const QStringList &args, QObject *parent) : QThread(paren
     QCommandLineParser parser;
     parser.addHelpOption();
     parser.addOptions({currentPath, log, conf});
-    parser.process(args);
+    parser.parse(args);
 
     spdlogger l("MainThread");
     QString configFile = parser.value(conf);

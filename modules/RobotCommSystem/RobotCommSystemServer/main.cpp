@@ -10,6 +10,7 @@
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
+    app.setApplicationName("RobotCommSystemServer");
     MyMainThread myMainThread(app.arguments());
     QObject::connect(&myMainThread, SIGNAL(threadExit()), &app, SLOT(quit()));
     return app.exec();
