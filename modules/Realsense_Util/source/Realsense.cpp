@@ -77,7 +77,7 @@ void Realsense::run() {
 
     while (running) {
         try {
-            if (alignEnable) frames = align.process(p.wait_for_frames(1000));
+            if (alignEnable) frames = align.process(p.wait_for_frames());
             else frames = p.wait_for_frames();
         } catch (rs2::error e) {
             logger.error("in function '{}', {}", e.get_failed_function(), e.what());
